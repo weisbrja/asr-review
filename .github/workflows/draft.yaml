@@ -7,11 +7,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install LaTeX
-        run: sudo apt-get update && sudo apt-get install -y texlive-full
-      - name: Build PDF
-        run: latexmk -pdf -interaction=nonstopmode -halt-on-error asr.tex
-      - name: Get Timestamp
+      - name: Compile
+        uses: xu-cheng/latex-action@v4
+        with:
+          root_file: asr.tex
+      - name: Timestamp
         run : echo "TIMESTAMP=$(date '+%Y-%m-%d %T')" >> "$GITHUB_ENV"
       - name: Release
         uses: softprops/action-gh-release@v2
