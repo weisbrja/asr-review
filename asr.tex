@@ -10,6 +10,7 @@
 
 \usepackage[english]{babel}
 \usepackage{csquotes}
+\usepackage{siunitx}
 
 % For proper rendering and hyphenation of words containing Latin characters (including in bib files)
 \usepackage[T1]{fontenc}
@@ -53,12 +54,60 @@ Automatic Speech Recognition (ASR) is the task of transcribing spoken language i
 Today, automatic transcription is used ubiquitously not only in fields like law, where dictation is essential, but also in voice-controlled assistants as well as automatic captioning for movies, videos, conferences or voice messages.
 Advances in ASR not only enhance accessibility for individuals with typing or hearing impairments, but also generally provide a more natural interface for interacting with modern machines.
 Despite the progress, accurate automatic transcription of speech by any speaker in any environment still remains a challenging problem that is far from solved.
-The ASR task is often complicated by background noise as well as varying speaker counts, accents and styles, further compounded by the large number of spoken languages and made even more complex by code-switching.
-These challenges are further exacerbated in low-resource scenarios, where annotated speech data are limited---a situation that affects many languages, especially those spoken in less wealthier nations.
-Additionally, large vocabularies pose significant difficulties for ASR systems, as some words are almost guaranteed to be underrepresented in the training data, increasing the complexity of recognition and modeling.
-Spoken language also frequently contains disfluencies, such as fragmented, repeated or truncated words (e.g. \enquote{main- mainly}), as well as filled pauses (e.g. \enquote{uhm}, \enquote{uh}).
 
-In this review, we will describe and compare state-of-the-art ASR systems, as well as challenges remaining to be solved.
+In this review, we will describe the ASR task and the challenges making it hard to achieve high accuracy in a lot of scenarios.
+We will then talk in detail about some state-of-the-art ASR systems, comparing their architecture and performance.
+% historic development of performance metric
+
+\section{Challenges in ASR}
+
+The ASR task varies along multiple dimensions, one of them being vocabulary size.
+Some low vocabulary ASR tasks such as digit recognition or detecting \enquote{yes} versus \enquote{no} answers have been solved for quite a while .
+Tasks that require accurate transcription of speech using an unrestricted large vocabulary, like videos or conversations, represent much harder challenges \cite{jurafskySpeechLanguageProcessing2025}.
+
+A very important dimension is given by the environment and setup used for recording the audio data to be transcribed.
+Audio recorded in a quiet studio environment without much noise close to a high quality microphone is much easier to transcribe than audio recorded on a busy street or inside a restaurant with the target standing far away from the recording microphone.
+
+It also matters who the speaker is talking to.
+Conversational speech between humans is much harder to transcribe accurately, than speech addressed directly towards a machine, as speakers tend to use a more simple register as well as articulating themselves more clearly in such scenarios.
+The transcription of conversational speech is also generally made much harder due to a higher speaker count.
+
+At last, varying speaker accents and styles add another dimension to the task of ASR.
+This variation is heavily compounded by the large number of spoken languages and made even more complex by code-switching.
+Variations in such speaker-class characteristics often demand a large amount of sample data, which can be challenging to come by for many local dialects as well as entire languages, especially those spoken in less wealthier nations.
+Such low-resource scenarios still remain a hard challenge in ASR \cite{jurafskySpeechLanguageProcessing2025}.
+% generally speaking, there is less labeled training data available when comparing to other NLP tasks
+
+Spoken language also frequently contains disfluencies, such as fragmented, repeated or truncated words (e.g. \enquote{main- mainly}), as well as filled pauses (e.g. \enquote{uhm}, \enquote{uh}), differentiating ASR from other NLP tasks such as machine translation.
+
+\section{Approaches to ASR}
+
+Historically, there have been many approaches to the ASR task, but in this review we will only address two of the main paradigms found in state-of-the-art ASR systems:
+attention-based encoder-decoder architectures, as well as self-supervised speech models paired with the CTC loss function.
+
+Before diving into the respective architectures, we will first discuss common techniques used not only in the models to be discussed, but also many others.
+
+ASR systems often times consist of multiple components, built around a core speech recognition model.
+These components are often arranged as a pipeline and can include audio format conversion, feature extraction, subsampling, voice activity detection and (inverse) text normalization \cite{radfordRobustSpeechRecognition2023}.
+
+% sequence-to-sequence transducing
+% long sequences of acoustic features as input, much shorter output sequences of letters or words
+% -> subsampling needed (or CTC loss)
+
+\subsection{Speech Feature Extraction}
+
+The most basic representation of audio data, also referred to as the waveform, uses the amplitude of the recorded sound waves at each time frame.
+These amplitudes are digitized by sampling and quantizing them at a given sampling frequency (e.g. $\SI{8}{\kilo\hertz}$ for telephone speech or $\SI{16}{\kilo\hertz}$ for microphone data).
+Often times, this representation is not used directly as the input to the speech recognition model.
+Instead, the system computes the log mel spectrum for small windows of time (characterized by the window size, stride and shape) and uses those feature vectors as the input.
+The mel is a unit of pitch representing the human perception of changes in pitch (which is roughly linear for frequencies between $\SI{100}{\hertz}$ and $\SI{1000}{\hertz}$ and logarithmic for frequencies above this range) more accurately than raw frequency values.
+By computing the frequencies present in the audio signal for each time window using a Fourier transform, we can sample the mel spectrum values for this time window by accumulating the energy levels of each frequency range using the mel filter bank.
+Because human perception of amplitude is also logarithmic, we then take the log of each of the mel spectrum values, resulting in a vector of scalars, each of which is called a channel.
+It is also common for ASR systems to then normalize these channels to range from $-1$ to $1$ as well as a having a zero mean \cite{jurafskySpeechLanguageProcessing2025}.
+
+% positional encoding
+
+% \subsection{The Encoder-Decoder Architecture}
 
 \bibliography{zotero}
 
