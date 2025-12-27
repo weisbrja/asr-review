@@ -22,6 +22,22 @@
   file = {/home/weisbrja/kit/zotero/storage/JVYIM36P/Chan et al. - 2015 - Listen, Attend and Spell.pdf}
 }
 
+@online{gravesSequenceTransductionRecurrent2012,
+  title = {Sequence {{Transduction}} with {{Recurrent Neural Networks}}},
+  author = {Graves, Alex},
+  date = {2012-11-14},
+  eprint = {1211.3711},
+  eprinttype = {arXiv},
+  eprintclass = {cs},
+  doi = {10.48550/arXiv.1211.3711},
+  url = {http://arxiv.org/abs/1211.3711},
+  urldate = {2025-12-26},
+  abstract = {Many machine learning tasks can be expressed as the transformation---or \textbackslash emph\{transduction\}---of input sequences into output sequences: speech recognition, machine translation, protein secondary structure prediction and text-to-speech to name but a few. One of the key challenges in sequence transduction is learning to represent both the input and output sequences in a way that is invariant to sequential distortions such as shrinking, stretching and translating. Recurrent neural networks (RNNs) are a powerful sequence learning architecture that has proven capable of learning such representations. However RNNs traditionally require a pre-defined alignment between the input and output sequences to perform transduction. This is a severe limitation since \textbackslash emph\{finding\} the alignment is the most difficult aspect of many sequence transduction problems. Indeed, even determining the length of the output sequence is often challenging. This paper introduces an end-to-end, probabilistic sequence transduction system, based entirely on RNNs, that is in principle able to transform any input sequence into any finite, discrete output sequence. Experimental results for phoneme recognition are provided on the TIMIT speech corpus.},
+  pubstate = {prepublished},
+  keywords = {Computer Science - Machine Learning,Computer Science - Neural and Evolutionary Computing,Statistics - Machine Learning},
+  file = {/home/weisbrja/kit/zotero/storage/LKLBUD5Z/Graves - 2012 - Sequence Transduction with Recurrent Neural Networks.pdf;/home/weisbrja/kit/zotero/storage/HCMBP3VJ/1211.html}
+}
+
 @article{hannunSequenceModelingCTC2017,
   title = {Sequence {{Modeling}} with {{CTC}}},
   author = {Hannun, Awni},
@@ -57,12 +73,35 @@
   file = {/home/weisbrja/kit/zotero/storage/DFDKNFVG/sclite.html}
 }
 
-@article{radfordRobustSpeechRecognition,
+@inproceedings{pengReproducingWhisperStyleTraining2023,
+  title = {Reproducing {{Whisper-Style Training Using An Open-Source Toolkit And Publicly Available Data}}},
+  booktitle = {2023 {{IEEE Automatic Speech Recognition}} and {{Understanding Workshop}} ({{ASRU}})},
+  author = {Peng, Yifan and Tian, Jinchuan and Yan, Brian and Berrebbi, Dan and Chang, Xuankai and Li, Xinjian and Shi, Jiatong and Arora, Siddhant and Chen, William and Sharma, Roshan and Zhang, Wangyou and Sudo, Yui and Shakeel, Muhammad and Jung, Jee-Weon and Maiti, Soumi and Watanabe, Shinji},
+  date = {2023-12},
+  pages = {1--8},
+  doi = {10.1109/ASRU57964.2023.10389676},
+  url = {https://ieeexplore.ieee.org/document/10389676},
+  urldate = {2025-12-26},
+  abstract = {Pre-training speech models on large volumes of data has achieved remarkable success. OpenAI Whisper is a multilingual multitask model trained on 680k hours of supervised speech data. It generalizes well to various speech recognition and translation benchmarks even in a zero-shot setup. However, the full pipeline for developing such models (from data collection to training) is not publicly accessible, which makes it difficult for researchers to further improve its performance and address training-related issues such as efficiency, robustness, fairness, and bias. This work presents an Open Whisper-style Speech Model (OWSM), which reproduces Whisperstyle training using an open-source toolkit and publicly available data. OWSM even supports more translation directions and can be more efficient to train. We will publicly release all scripts used for data preparation, training, inference, and scoring as well as pretrained models and training logs to promote open science. 11https://github.com/espnet/espnet},
+  eventtitle = {2023 {{IEEE Automatic Speech Recognition}} and {{Understanding Workshop}} ({{ASRU}})},
+  keywords = {Benchmark testing,Conferences,Data collection,Data models,Pipelines,Pre-training,Robustness,speech recognition,speech translation,Training,whisper},
+  file = {/home/weisbrja/kit/zotero/storage/DP5N9J25/Peng et al. - 2023 - Reproducing Whisper-Style Training Using An Open-Source Toolkit And Publicly Available Data.pdf}
+}
+
+@inproceedings{radfordRobustSpeechRecognition2023,
   title = {Robust {{Speech Recognition}} via {{Large-Scale Weak Supervision}}},
-  author = {Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya},
-  abstract = {We study the capabilities of speech processing systems trained simply to predict large amounts of transcripts of audio on the internet. When scaled to 680,000 hours of multilingual and multitask supervision, the resulting models generalize well to standard benchmarks and are often competitive with prior fully supervised results but in a zeroshot transfer setting without the need for any finetuning. When compared to humans, the models approach their accuracy and robustness. We are releasing models and inference code to serve as a foundation for further work on robust speech processing.},
+  booktitle = {Proceedings of the 40th {{International Conference}} on {{Machine Learning}}},
+  author = {Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and Mcleavey, Christine and Sutskever, Ilya},
+  date = {2023-07-03},
+  pages = {28492--28518},
+  publisher = {PMLR},
+  issn = {2640-3498},
+  url = {https://proceedings.mlr.press/v202/radford23a.html},
+  urldate = {2025-12-26},
+  abstract = {We study the capabilities of speech processing systems trained simply to predict large amounts of transcripts of audio on the internet. When scaled to 680,000 hours of multilingual and multitask supervision, the resulting models generalize well to standard benchmarks and are often competitive with prior fully supervised results without the need for any dataset specific fine-tuning. When compared to humans, the models approach their accuracy and robustness. We are releasing models and inference code to serve as a foundation for further work on robust speech processing.},
+  eventtitle = {International {{Conference}} on {{Machine Learning}}},
   langid = {english},
-  file = {/home/weisbrja/kit/zotero/storage/X2DSVBP8/Radford et al. - Robust Speech Recognition via Large-Scale Weak Supervision.pdf}
+  file = {/home/weisbrja/kit/zotero/storage/ZVUQARE5/Radford et al. - 2023 - Robust Speech Recognition via Large-Scale Weak Supervision.pdf}
 }
 
 @online{vaswaniAttentionAllYou2023,
