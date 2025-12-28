@@ -1,0 +1,22 @@
+# latex
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+
+# bibliography
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+
+# artifacts
+*.pdf
+*.dvi
+*.ps
