@@ -5,6 +5,22 @@
   file = {/home/weisbrja/kit/zotero/storage/79S7DCZ8/Baevski et al. - wav2vec 2.0 A Framework for Self-Supervised Learning of Speech Representations.pdf}
 }
 
+@online{baLayerNormalization2016,
+  title = {Layer {{Normalization}}},
+  author = {Ba, Jimmy Lei and Kiros, Jamie Ryan and Hinton, Geoffrey E.},
+  date = {2016-07-21},
+  eprint = {1607.06450},
+  eprinttype = {arXiv},
+  eprintclass = {stat},
+  doi = {10.48550/arXiv.1607.06450},
+  url = {http://arxiv.org/abs/1607.06450},
+  urldate = {2025-12-31},
+  abstract = {Training state-of-the-art, deep neural networks is computationally expensive. One way to reduce the training time is to normalize the activities of the neurons. A recently introduced technique called batch normalization uses the distribution of the summed input to a neuron over a mini-batch of training cases to compute a mean and variance which are then used to normalize the summed input to that neuron on each training case. This significantly reduces the training time in feed-forward neural networks. However, the effect of batch normalization is dependent on the mini-batch size and it is not obvious how to apply it to recurrent neural networks. In this paper, we transpose batch normalization into layer normalization by computing the mean and variance used for normalization from all of the summed inputs to the neurons in a layer on a single training case. Like batch normalization, we also give each neuron its own adaptive bias and gain which are applied after the normalization but before the non-linearity. Unlike batch normalization, layer normalization performs exactly the same computation at training and test times. It is also straightforward to apply to recurrent neural networks by computing the normalization statistics separately at each time step. Layer normalization is very effective at stabilizing the hidden state dynamics in recurrent networks. Empirically, we show that layer normalization can substantially reduce the training time compared with previously published techniques.},
+  pubstate = {prepublished},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/home/weisbrja/kit/zotero/storage/7HSYTT88/Ba et al. - 2016 - Layer Normalization.pdf;/home/weisbrja/kit/zotero/storage/T6JNHDPZ/1607.html}
+}
+
 @online{chanListenAttendSpell2015,
   title = {Listen, {{Attend}} and {{Spell}}},
   author = {Chan, William and Jaitly, Navdeep and Le, Quoc V. and Vinyals, Oriol},
@@ -20,6 +36,24 @@
   pubstate = {prepublished},
   keywords = {Computer Science - Computation and Language,Computer Science - Machine Learning,Computer Science - Neural and Evolutionary Computing,Statistics - Machine Learning},
   file = {/home/weisbrja/kit/zotero/storage/JVYIM36P/Chan et al. - 2015 - Listen, Attend and Spell.pdf}
+}
+
+@inproceedings{devlinBERTPretrainingDeep2019,
+  title = {{{BERT}}: {{Pre-training}} of {{Deep Bidirectional Transformers}} for {{Language Understanding}}},
+  shorttitle = {{{BERT}}},
+  booktitle = {Proceedings of the 2019 {{Conference}} of the {{North American Chapter}} of the {{Association}} for {{Computational Linguistics}}: {{Human Language Technologies}}, {{Volume}} 1 ({{Long}} and {{Short Papers}})},
+  author = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
+  editor = {Burstein, Jill and Doran, Christy and Solorio, Thamar},
+  date = {2019-06},
+  pages = {4171--4186},
+  publisher = {Association for Computational Linguistics},
+  location = {Minneapolis, Minnesota},
+  doi = {10.18653/v1/N19-1423},
+  url = {https://aclanthology.org/N19-1423/},
+  urldate = {2026-01-04},
+  abstract = {We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models (Peters et al., 2018a; Radford et al., 2018), BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers. As a result, the pre-trained BERT model can be fine-tuned with just one additional output layer to create state-of-the-art models for a wide range of tasks, such as question answering and language inference, without substantial task-specific architecture modifications. BERT is conceptually simple and empirically powerful. It obtains new state-of-the-art results on eleven natural language processing tasks, including pushing the GLUE score to 80.5 (7.7 point absolute improvement), MultiNLI accuracy to 86.7\% (4.6\% absolute improvement), SQuAD v1.1 question answering Test F1 to 93.2 (1.5 point absolute improvement) and SQuAD v2.0 Test F1 to 83.1 (5.1 point absolute improvement).},
+  eventtitle = {{{NAACL-HLT}} 2019},
+  file = {/home/weisbrja/kit/zotero/storage/CQP7ZNQ8/Devlin et al. - 2019 - BERT Pre-training of Deep Bidirectional Transformers for Language Understanding.pdf}
 }
 
 @article{gravesConnectionistTemporalClassification,
@@ -63,6 +97,39 @@
   langid = {english},
   keywords = {CTC},
   file = {/home/weisbrja/kit/zotero/storage/BVIJWCUE/ctc.html}
+}
+
+@online{hendrycksGaussianErrorLinear2023,
+  title = {Gaussian {{Error Linear Units}} ({{GELUs}})},
+  author = {Hendrycks, Dan and Gimpel, Kevin},
+  date = {2023-06-06},
+  eprint = {1606.08415},
+  eprinttype = {arXiv},
+  eprintclass = {cs},
+  doi = {10.48550/arXiv.1606.08415},
+  url = {http://arxiv.org/abs/1606.08415},
+  urldate = {2025-12-31},
+  abstract = {We propose the Gaussian Error Linear Unit (GELU), a high-performing neural network activation function. The GELU activation function is \$xΦ(x)\$, where \$Φ(x)\$ the standard Gaussian cumulative distribution function. The GELU nonlinearity weights inputs by their value, rather than gates inputs by their sign as in ReLUs (\$x\textbackslash mathbf\{1\}\_\{x{$>$}0\}\$). We perform an empirical evaluation of the GELU nonlinearity against the ReLU and ELU activations and find performance improvements across all considered computer vision, natural language processing, and speech tasks.},
+  pubstate = {prepublished},
+  keywords = {Computer Science - Machine Learning},
+  file = {/home/weisbrja/kit/zotero/storage/3YZA3GS5/Hendrycks and Gimpel - 2023 - Gaussian Error Linear Units (GELUs).pdf;/home/weisbrja/kit/zotero/storage/5KKTNCD9/1606.html}
+}
+
+@article{jegouProductQuantizationNearest2011,
+  title = {Product {{Quantization}} for {{Nearest Neighbor Search}}},
+  author = {Jégou, Herve and Douze, Matthijs and Schmid, Cordelia},
+  date = {2011-01},
+  journaltitle = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  volume = {33},
+  number = {1},
+  pages = {117--128},
+  issn = {1939-3539},
+  doi = {10.1109/TPAMI.2010.57},
+  url = {https://ieeexplore.ieee.org/document/5432202},
+  urldate = {2026-01-04},
+  abstract = {This paper introduces a product quantization-based approach for approximate nearest neighbor search. The idea is to decompose the space into a Cartesian product of low-dimensional subspaces and to quantize each subspace separately. A vector is represented by a short code composed of its subspace quantization indices. The euclidean distance between two vectors can be efficiently estimated from their codes. An asymmetric version increases precision, as it computes the approximate distance between a vector and a code. Experimental results show that our approach searches for nearest neighbors efficiently, in particular in combination with an inverted file system. Results for SIFT and GIST image descriptors show excellent search accuracy, outperforming three state-of-the-art approaches. The scalability of our approach is validated on a data set of two billion vectors.},
+  keywords = {approximate search.,Electronic mail,Euclidean distance,File systems,High-dimensional indexing,Image databases,image indexing,Indexing,Nearest neighbor searches,Neural networks,Permission,Quantization,Scalability,very large databases,wav2vec},
+  file = {/home/weisbrja/kit/zotero/storage/T7ZJHX5Y/Jégou et al. - 2011 - Product Quantization for Nearest Neighbor Search.pdf;/home/weisbrja/kit/zotero/storage/56B3VRGA/5432202.html}
 }
 
 @book{jurafskySpeechLanguageProcessing2025,

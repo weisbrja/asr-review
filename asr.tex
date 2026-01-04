@@ -9,7 +9,6 @@
 \usepackage{latexsym}
 
 \usepackage[english]{babel}
-\usepackage{csquotes}
 \usepackage{siunitx}
 \usepackage{mathptmx}
 
@@ -21,6 +20,8 @@
 
 % This assumes your files are encoded as UTF8
 \usepackage[utf8]{inputenc}
+
+\usepackage{csquotes}
 
 % This is not strictly necessary, and may be commented out,
 % but it will improve the layout of the manuscript,
@@ -115,25 +116,76 @@ This architecture also generalizes well to different sequence-to-sequence modeli
 
 \subsection{Self-Supervised Encoder-only Speech Representation Models}\label{sec:wav2vec2.0}
 
+\subsubsection{Motivation}
+
 As discussed in Section~\ref{sec:challenges_in_asr}, a major challenge for modern neural network–based ASR systems is the lack of large labeled datasets containing thousands of hours of transcribed speech for most of the world's languages.
-\citet{baevskiWav2vec20Framework} note, however, that human infants are able to acquire language understanding without such labeled examples anyway.
+
+\citet{baevskiWav2vec20Framework} note, however, that human infants are indeed able to acquire language understanding without such labeled examples anyway.
 Instead, infants listen to adults around them speaking a language and gradually learn useful representations of speech.
-\citet{baevskiWav2vec20Framework} argue, that self-supervised learning on unlabeled speech data can provide a similar mechanism for machine learning models.
-Self-supervised learning has already proven effective across other NLP tasks and in other fields of research such as computer vision.
-Importantly, with wav2vec 2.0, they focus solely on learning speech representations, since directly learning to transcribe from unlabeled data is infeasible.
-The learned representations are then fine-tuned on labeled data using a Connectionist Temporal Classificiation (CTC) loss \cite{gravesConnectionistTemporalClassification} to perform tasks such as speech recognition.
+Further, \citet{baevskiWav2vec20Framework} argue that self-supervised learning on unlabeled speech data can provide a similar mechanism for machine learning models, since it has proven itself effective across many NLP tasks and in other fields of research such as computer vision.
+
+With wav2vec~2.0, \citet{baevskiWav2vec20Framework} use unlabeled speech data to train an encoder-only model to learn contextualized representations of jointly learnt quantized speech units.
+Later on, they add a linear decoder and fine-tune their model on labeled data using a Connectionist Temporal Classificiation (CTC) loss \cite{gravesConnectionistTemporalClassification} to perform tasks such as speech recognition down the line.
+
+\subsubsection{Model Architecture}
+
+Their model consists of a speech feature encoder, consisting of a stack of 1D convolutional layers each followed by layer normalization \cite{baLayerNormalization2016} and a GELU activation function \cite{hendrycksGaussianErrorLinear2023}.
+This feature encoder builds latent feature representations for a set number of timesteps directly from the raw input waveform.
+
+The output of the feature encoder is then passed to the so called context network, which in the pre-training phase consists only of the encoder part of a Transformer \cite{vaswaniAttentionAllYou2023}.
+For encoding positional information, \citet{baevskiWav2vec20Framework} use relative positional embeddings by adding a convolution of the inputs followed by a GELU activation on to the inputs and then applying layer normalization.
+
+\subsubsection{Self-Supervised Pre-Training}
+
+During pre-training, random time spans in the input audio are chosen and the corresponding speech feature vectors computed by the feature encoder are masked out, similar to the self-supervised training methods used in other masked language models such as BERT \cite{devlinBERTPretrainingDeep2019}.
+Masked out feature vectors are simply replaced by a trained feature vector shared between all masked time steps.
+
+The masked feature vectors are then passed to the context network, producing contextualized representations of speech for each time step.
+
+A loss is then calculated for each masked time step, based on a contrastive learning objective.
+A quantization module computes quantized speech representations for each of the masked feature vectors by discretizing each unmasked feature to a finite set of speech representations using product quantization \cite{jegouProductQuantizationNearest2011}, an approximate nearest-neighbor method that maps each feature vector to a combination of learned codebook entries.
+Each of the quantized representations are then used in a classification problem:
+Given the contextualized representation for a certain masked time step, the model must identify the correct quantized speech representation associated with that time step from a set of candidate representations containing distractors.
+The distractor representations for this contrastive task are quantized representation sampled from some of the other masked time steps within the same utterance, ensuring that the negative examples are acoustically and contextually plausible.
+Rather than employing an explicit classification loss, the cosine similarity scores between the contextualized representation of the masked time step and each candidate quantized representation is used to calculate the contrastive loss.
+
+This training objective encourages the similarity score of the true target to be higher than those of the distractors, thereby pushing the model to align contextual representations with the learnt discrete speech units.
+Since the masked input provides no direct acoustic evidence, success on this task requires the model to learn representations that capture meaningful contextual information from the surrounding speech.
+
+Finally, because the contrastive loss includes the quantized speech representations, gradients can propagate back through the quantization module during training.
+As a result, the codebook embeddings used for quantization are learned jointly with the rest of the model, allowing the quantized speech units themselves to adapt to the structure of the speech data.
+
+\subsubsection{Fine-Tuning}
+
+After pre-training, the model is then fine-tuned for speech recognition.
+A linear decoder is added onto the context network, projecting the learned speech representations onto a set number of classes, representing the task specific vocabulary.
+This new model is then optimized using labeled speech data and minimizing CTC loss \cite{gravesConnectionistTemporalClassification}.
+
+%TODO: should i explain how CTC loss works?
+
+\subsubsection{Results}
+
+\subsubsection{Connectionist Temporal Classificiation Loss}
 
 
-% TODO: describe the architecture
+\subsubsection{Conclusions}
 
 % con: CTC makes strong independence assumption
 % -> leads to what errors?
+% bidirectional attention defeats this assumption?
 % balanced out by applying LLM how?
 
+% encoder-only models/masked language models are generally used for interpretative tasks instead of generation
+
+% attention looks backwards AND forwards -> only applicable on offline data?
+
+\citet{baevskiWav2vec20Framework} conclude that pre-training speech recognition models on unlabeled data shows large potential, especially for ultra-low resource scenarios with very little labeled speech data available.
+This could improve the availability of speech recognition systems for many lesser spoken languages as well as dialects, as this still remains a challenge in ASR (see section \ref{sec:challenges_in_asr}).
+
+% TODO: compare size of models
 
 \subsection{Attention-based Encoder-Decoder Architecture}
 
-% TODO: rewrite after writing section on wav2vec 2.0
 % make it clear, that whisper improves on wav2vec 2.0, without the unsupervised techniques
 Due to the unavailability of high-quality large labeled datasets for ASR in many languages, self-supervision techniques such as wav2vec 2.0 \cite{baevskiWav2vec20Framework} made use of the large amounts of readily available unlabeled speech data, achieving astounding success.
 Separately, research in other fields such as computer vision showed that training on much larger weakly supervised datasets, rather than only high-quality labeled data, leads to significant improvements in robustness and generalization of models \cite{radfordRobustSpeechRecognition2023}.
