@@ -59,10 +59,9 @@ Today, automatic transcription is used ubiquitously not only in fields like law,
 Advances in ASR not only enhance accessibility for individuals with typing or hearing impairments, but also generally provide a more natural interface for interacting with modern machines.
 Despite the progress, accurate automatic transcription of speech by any speaker in any environment still remains a challenging problem that is far from solved.
 
-% TODO: rewrite after comparison rewrite
-In this review, we will describe the ASR task and the challenges making it hard to achieve high accuracy in a lot of scenarios.
-We will then talk in detail about the different approaches taken by two state-of-the-art ASR systems, comparing their paradigms and performance.
-% historic development of performance metric
+In this review, we will describe the ASR task and the challenges in achieving high accuracy transcriptions.
+We will then talk in detail about the different approaches taken by two modern ASR systems, comparing their design, goals and performance.
+% TODO: historic development of performance metric
 
 \section{Challenges in ASR}\label{sec:challenges_in_asr}
 
@@ -133,7 +132,7 @@ They propose training an encoder-only model to learn contextualized representati
 For downstream tasks such as speech recognition, they add a linear decoder and fine-tune their model on possibly very little labeled data using a Connectionist Temporal Classificiation (CTC) \cite{gravesConnectionistTemporalClassification}.
 
 By contrast, \citet{radfordRobustSpeechRecognition2023} highlight a general limitation of such self-supervised pre-training approaches: while they are able to train audio encoders providing high-quality representations of speech, they lack an equally strong pre-trained decoder, requiring fine-tuning on labeled data for downstream tasks such as ASR; a complex process introducing the risk of the model adepting to dataset-specific patterns and reducing its ability to generalize well to other datasets.
-Encoder-only models also often benefit from the use of an additional language model together with the fine-tuned decoder. % add source
+Encoder-only models also often benefit from the use of an additional language model together with the fine-tuned decoder.
 
 \citet{radfordRobustSpeechRecognition2023} instead suggest adopting a large-scale weakly-supervised strategy, moving beyond existing gold-standard labeled datasets and pre-training encoder-decoder models on these substantially larger collections of labeled speech data.
 This weakly-supervised approach has already been shown to improve robustness and generalization in other domains, such as computer vision.
@@ -176,21 +175,24 @@ The distractor representations for this contrastive task are quantized represent
 Rather than employing an explicit classification loss, the cosine similarity scores between the contextualized representation of the masked time step and each candidate representation are used to calculate the contrastive loss, which is then be used by the optimizer.
 The contrastive training objective encourages the similarity score of the true target to be higher than those of the distractors, thereby pushing the model to align the contextual representations and the discrete speech units.
 
-\citet{baevskiWav2vec20Framework} also enable the gradients of the contrastive loss to flow back through the quantization module during optimization by using a hard selection for determining the quantized representations in a forward pass and assuming a probabilistic soft selection in the backwards pass of a pre-training step.
+\citet{baevskiWav2vec20Framework} also enable the gradients of the contrastive loss to flow back through the quantization module during optimization by using a hard selection for determining the quantized representations in a forward pass and assuming a probabilistic soft selection in the backwards pass of a pre-training step (Gumbel softmax).
 As a result, the codebook embeddings used by the quantization module are learned jointly with the rest of the model, allowing the quantized speech units themselves to adapt to the structure of the speech data.
 
 Additionally, \citet{baevskiWav2vec20Framework} employ a diversity loss with the purpose of codebook entries going unused in the quantization module.
 
 Pre-training Whisper is conceptually simpler, since it uses a standard Transformer and sequence-to-sequence cross-entropy loss.
 
-For every transcribed speech sample, the audio is passed through the encoder.
-The decoder then autoregressively predicts the next transcript token given all previous correct tokens and while attending to the encoded audio using cross-attention.
-% The optimizer then minimizes the cross-entropy loss over...
-% TODO: continue here
+With Whisper, the audio of a transcribed speech sample is first passed through the encoder.
+The decoder then autoregressively predicts the next transcript token given all previously correct tokens and whilst attending to the encoded audio using cross-attention.
+
+The optimizer then minimizes the cross-entropy loss over the generated token.
+This is done for all exptected transcript tokens.
+
+Both models also employ (a modified version of) SpecAugment \citet{parkSpecAugmentSimpleData2019} to augment labeled training data, with wav2vec~2.0 using it during fine-tuning (see section~\ref{sec:fine-tuning}).
 
 % TODO: write about fine-tuning
 
-\subsubsection{Fine-Tuning}
+\subsubsection{Fine-Tuning}\label{sec:fine-tuning}
 
 After pre-training the encoder in the described fashion, the wav2vec~2.0 model then needs to be fine-tuned for speech recognition.
 A linear decoder is added onto the context network, projecting the learned speech representations onto a set number of classes, representing the task specific vocabulary.
