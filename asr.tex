@@ -42,6 +42,10 @@
 %additional package(s)
 \usepackage{graphicx}
 
+\usepackage[absolute,overlay]{textpos}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
 \title{A Review of Automatic Speech Recognition}
 
 \author{Jannis Weisbrodt \\
@@ -50,7 +54,22 @@
   }
 
 \begin{document}
+
+% TODO: remove later
+\begin{textblock*}{\textwidth}(2.5cm,.5cm)
+    \color{red}
+    \noindent
+    \textbf{Questions to my supervisor:}
+    \begin{itemize}[noitemsep, topsep=0pt, leftmargin=*]
+      \item What are further aspects I should compare the models on (other than existing section headings)?
+      \item Where to talk about the common techniques, especially the Transformer architecture? Should I maybe talk about the history of used model architectures (\ldots, DNNs, CNNs, RNNs and then Transformers?)
+    \end{itemize}
+    \color{black}
+\end{textblock*}
+
 \maketitle
+
+% TODO: write abstract
 \begin{abstract}
 	Abstract goes here.
 \end{abstract}
@@ -233,6 +252,14 @@ As a result, the decoder added onto a pre-trained wav2vec~2.0 model cannot captu
 % TODO: write about how including a language model with decoding for wav2vec 2.0 helps and how it's done
 
 \subsubsection{Inference}\label{sec:inference}
+
+\subsection{Evaluation}
+
+\subsubsection{Method}
+
+\subsubsection{Performance}
+
+\subsection{Conclusions}
 
 
 
