@@ -12,6 +12,9 @@
 \usepackage{siunitx}
 \usepackage{mathptmx}
 
+\usepackage{amsmath}
+\usepackage{amssymb}
+
 \usepackage{comment}
 
 % For proper rendering and hyphenation of words containing Latin characters (including in bib files)
@@ -49,7 +52,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Abstract goes here.
+	Abstract goes here.
 \end{abstract}
 
 \section{Introduction}
@@ -113,7 +116,7 @@ If needed, inverse text normalization is then applied to the output of the speec
 
 \subsubsection{Attention-based Transformer Architecture}
 
-% TODO: this section is very alone here and should probably be integrated somewhere else
+% TODO: maybe do this section as a historical overview of the previously used architectures in ASR? DNN, CNN, RNN and nowadays Transformer
 \citet{vaswaniAttentionAllYou2023} showed that the Transformer architecture, which entirely replaces recurrent connections with multi-headed self-attention, achieves performance surpassing competitive recurrent models of its time while requiring substantially lower training cost.
 This architecture also generalizes well to different sequence-to-sequence modeling tasks, such as ASR and has since provided the prevalent building blocks of state-of-the-art ASR systems.
 
@@ -183,78 +186,57 @@ Additionally, \citet{baevskiWav2vec20Framework} employ a diversity loss with the
 Pre-training Whisper is conceptually simpler, since it uses a standard Transformer and sequence-to-sequence cross-entropy loss.
 
 With Whisper, the audio of a transcribed speech sample is first passed through the encoder.
-The decoder then autoregressively predicts the next transcript token given all previously correct tokens and whilst attending to the encoded audio using cross-attention.
+The decoder then autoregressively predicts the next transcript token given all previously correct tokens and whilst attending to the encoded audio using cross-attention, similar to inference as described in section~\ref{sec:inference}.
 
 The optimizer then minimizes the cross-entropy loss over the generated token.
 This is done for all exptected transcript tokens.
 
 Both models also employ (a modified version of) SpecAugment \citet{parkSpecAugmentSimpleData2019} to augment labeled training data, with wav2vec~2.0 using it during fine-tuning (see section~\ref{sec:fine-tuning}).
 
-% TODO: write about fine-tuning
+% TODO; describe whisper's multi-task training: translation, transcription for multiple languages, voice activity detection, speaker diarization, time
+
+% TODO: talk about how alignment is learned
 
 \subsubsection{Fine-Tuning}\label{sec:fine-tuning}
 
-After pre-training the encoder in the described fashion, the wav2vec~2.0 model then needs to be fine-tuned for speech recognition.
-A linear decoder is added onto the context network, projecting the learned speech representations onto a set number of classes, representing the task specific vocabulary.
-This new model is then optimized using labeled speech data and minimizing CTC loss \cite{gravesConnectionistTemporalClassification}.
+% TODO: write about fine-tuning
+
+Pre-training a wav2vec~2.0 model only teaches it to produce contextualized speech representations rather than actual transcript text.
+To actually perform speech recognition, a linear decoder is appended to the context network of the pre-trained encoder-only model.
+This decoder maps each contextualized speech representation to a logit vector, followed by a softmax to produce a probability distribution over the output vocabulary, e.g.\ characters, punctuation marks or subword tokens.
+Training this initially randomized decoder in a fine-tuning step is therefore a necessity in applying a pre-trained wav2vec~2.0 model to a task such as ASR.
+
+In contrast, Whisper is already trained on large amounts of labeled speech samples and can perform ASR in zero-shot setting, making fine-tuning optional---one of the primary research goals of \citet{radfordRobustSpeechRecognition2023}.
+
+The actual fine-tuning of wav2vec~2.0 performed by \citet{baevskiWav2vec20Framework} uses CTC loss \cite{gravesConnectionistTemporalClassification} with some (possibly very little) labeled speech data.
+The learned feature encoder stays fixed and is not trained during this process.
+Latent speech features produced by it are however tampered with during fine-tuning using a method similar to SpecAugment \cite{parkSpecAugmentSimpleData2019}, as previously stated, because this improves generalization and robustness.
+
+Fine-tuning the decoder using CTC loss has the goal of maximizing the probability of the model outputting the correct transcript, when all duplicate output tokens, e.g.\ characters, between blank tokens are collapsed, as this collapsing also happens during inference (see section~\ref{sec:inference}).
+Different alignments of the input audio (or the generated speech representations) and the output tokens are therefore explicitly not considered, as they all amount to the same transcript being generated.
+
+The CTC loss thus marginalizes over all valid alignments of output tokens---the sequences that collapse to the ground-truth transcript.
+This marginalization is efficiently computed using dynamic programming, summing the probabilities of all such alignments without explicitly enumerating and calculating the probability of each alignment.
+The dynamic programming approach used here takes advantage of the fact that alignments producing the same prefix of the target transcription at the same time step in the input audio share the same accumulated probability up to that point.
+
+One of the main issues in training a decoder using CTC loss, as done in wav2vec~2.0, is that CTC relies on a strong conditional independence assumption:
+every output token in the output sequence is assumed to be conditionally independent of every other output token given the input sequence of audio speech features.
+% TODO: should i use more math like in the following?
+\begin{comment}
+Every output token $a_i$ in the output sequence $a_1, \ldots, a_T$ is assumed to be conditionally independent of every other output token $a_j$ given the input sequence $X$ of audio speech features:
+\begin{equation*}
+  P(a_1, a_2, \ldots, a_T\mid X) = \prod_{t=1}^T P(a_t\mid X)
+\end{equation*}
+\end{comment}
+As a result, the decoder added onto a pre-trained wav2vec~2.0 model cannot capture sequential dependencies between output tokens and does therefore not learn an implicit language model, unlike Whisper, which does not make this assumption.
+
+% TODO: write about how including a language model with decoding for wav2vec 2.0 helps and how it's done
 
 \subsubsection{Inference}\label{sec:inference}
 
+
+
 \begin{comment}
-
-\subsection{Self-Supervised Encoder-only Speech Representation Models}
-
-\subsubsection{Motivation}
-
-As discussed in Section~\ref{sec:challenges_in_asr}, a major challenge for modern neural network–based ASR systems is the lack of large labeled datasets containing thousands of hours of transcribed speech for most of the world's languages.
-
-\citet{baevskiWav2vec20Framework} note, however, that human infants are indeed able to acquire language understanding without such labeled examples anyway.
-Instead, infants listen to adults around them speaking a language and gradually learn useful representations of speech.
-Further, \citet{baevskiWav2vec20Framework} argue that self-supervised learning on unlabeled speech data can provide a similar mechanism for machine learning models, since it has proven itself effective across many NLP tasks and in other fields of research such as computer vision.
-
-With wav2vec~2.0, \citet{baevskiWav2vec20Framework} use unlabeled speech data to train an encoder-only model to learn contextualized representations of jointly learnt quantized speech units.
-Later on, they add a linear decoder and fine-tune their model on labeled data using a Connectionist Temporal Classificiation (CTC) loss \cite{gravesConnectionistTemporalClassification} to perform tasks such as speech recognition down the line.
-
-\subsubsection{Model Architecture}
-
-Their model consists of a speech feature encoder, consisting of a stack of 1D convolutional layers each followed by layer normalization \cite{baLayerNormalization2016} and a GELU activation function \cite{hendrycksGaussianErrorLinear2023}.
-This feature encoder builds latent feature representations for a set number of timesteps directly from the raw input waveform.
-
-The output of the feature encoder is then passed to the so called context network, which in the pre-training phase consists only of the encoder part of a Transformer \cite{vaswaniAttentionAllYou2023}.
-For encoding positional information, \citet{baevskiWav2vec20Framework} use relative positional embeddings by adding a convolution of the inputs followed by a GELU activation on to the inputs and then applying layer normalization.
-
-\subsubsection{Self-Supervised Pre-Training}
-
-During pre-training, random time spans in the input audio are chosen and the corresponding speech feature vectors computed by the feature encoder are masked out, similar to the self-supervised training methods used in other masked language models such as BERT \cite{devlinBERTPretrainingDeep2019}.
-Masked out feature vectors are simply replaced by a trained feature vector shared between all masked time steps.
-
-The masked feature vectors are then passed to the context network, producing contextualized representations of speech for each time step.
-
-A loss is then calculated for each masked time step, based on a contrastive learning objective.
-A quantization module computes quantized speech representations for each of the masked feature vectors by discretizing each unmasked feature to a finite set of speech representations using product quantization \cite{jegouProductQuantizationNearest2011}, an approximate nearest-neighbor method that maps each feature vector to a combination of learned codebook entries.
-Each of the quantized representations are then used in a classification problem:
-Given the contextualized representation for a certain masked time step, the model must identify the correct quantized speech representation associated with that time step from a set of candidate representations containing distractors.
-The distractor representations for this contrastive task are quantized representation sampled from some of the other masked time steps within the same utterance, ensuring that the negative examples are acoustically and contextually plausible.
-Rather than employing an explicit classification loss, the cosine similarity scores between the contextualized representation of the masked time step and each candidate quantized representation is used to calculate the contrastive loss.
-
-This training objective encourages the similarity score of the true target to be higher than those of the distractors, thereby pushing the model to align contextual representations with the learnt discrete speech units.
-Since the masked input provides no direct acoustic evidence, success on this task requires the model to learn representations that capture meaningful contextual information from the surrounding speech.
-
-Finally, because the contrastive loss includes the quantized speech representations, gradients can propagate back through the quantization module during training.
-As a result, the codebook embeddings used for quantization are learned jointly with the rest of the model, allowing the quantized speech units themselves to adapt to the structure of the speech data.
-
-\subsubsection{Fine-Tuning}
-
-After pre-training, the model is then fine-tuned for speech recognition.
-A linear decoder is added onto the context network, projecting the learned speech representations onto a set number of classes, representing the task specific vocabulary.
-This new model is then optimized using labeled speech data and minimizing CTC loss \cite{gravesConnectionistTemporalClassification}.
-
-%TODO: should i explain how CTC loss works?
-
-\subsubsection{Results}
-
-\subsubsection{Connectionist Temporal Classificiation Loss}
-
 
 \subsubsection{Conclusions}
 
