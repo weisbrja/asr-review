@@ -112,30 +112,40 @@ wav2vec~2.0 \citep{baevskiWav2vec20Framework}, a self-supervised encoder-only mo
 
 \subsection{Common Techniques in ASR}
 
-Before diving into the mentioned speech recognition models, we will first discuss some common techniques applied in many ASR systems.
-These systems often times consist of multiple components, built around a core speech recognition model.
+Before diving into the mentioned speech recognition models, we will first discuss some common techniques applied not only in the reference systems, but also many other ASR systems.
+Speech recognition systems often times consist of multiple components, built around a core speech recognition model.
 Most of the time, these components are arranged as a pipeline and can include audio format conversion, feature extraction, subsampling, voice activity detection and (inverse) text normalization \cite{radfordRobustSpeechRecognition2023}.
 
 \subsubsection{Speech Feature Extraction}
 
-The most basic representation of audio data, also referred to as the waveform, uses the amplitude of the recorded sound waves at each time frame.
-These amplitudes are digitized by sampling and quantizing them at a given sampling frequency (e.g. $\SI{8}{\kilo\hertz}$ for telephone speech or $\SI{16}{\kilo\hertz}$ for microphone data).
-Often times, this representation is not used directly as the input to the speech recognition model.
-Instead, the system computes the log mel spectrum for small windows of time (characterized by the window size, stride and shape) and uses those feature vectors as the input.
+ASR systems often have exact requirements on the format of the audio data they process.
+
+The most basic representation of audio data, used for example by wav2vec~2.0, is referred to as the raw waveform.
+This format represents audio data simply by the amplitude of the recorded sound waves at each time frame.
+These amplitudes are digitized by sampling them at a certain sampling frequency and quantizing them to a certain bit depth.
+Since speech recognition systems typically require their audio input to have a fixed sampling frequency (e.g.\ $\SI{16}{\kilo\hertz}$ for wav2vec 2.0 and Whisper) and a fixed bit depth, recorded audio data often needs to be resampled and requantized before it can be processed.
+
+Other ASR systems, such as Whisper, operate on a different audio representation and therefore require an additional preprocessing step.
+Instead of processing the raw waveform directly, the system first computes the so called log mel spectrum for small windows of time (characterized by the window size, stride and shape) and uses the resulting feature vectors as the input.
+
 The mel is a unit of pitch representing the human perception of changes in pitch (which is roughly linear for frequencies between $\SI{100}{\hertz}$ and $\SI{1000}{\hertz}$ and logarithmic for frequencies above this range) more accurately than raw frequency values.
-By computing the frequencies present in the audio signal for each time window using a Fourier transform, we can sample the mel spectrum values for this time window by accumulating the energy levels of each frequency range using the mel filter bank.
-Because human perception of amplitude is also logarithmic, we then take the log of each of the mel spectrum values, resulting in a vector of scalars, each of which is called a channel  \cite{jurafskySpeechLanguageProcessing2025}.
-It is also common for ASR systems to then normalize these channels to a zero mean and unit variance.
+By computing the frequencies present in the audio signal for each time window using a Fourier transform, we can sample the mel spectrum values for this time window by accumulating the energy levels of each frequency range using a mel filter bank.
+Because human perception of amplitude is also logarithmic, we then take the log of each of the mel spectrum values, resulting in a vector of scalars, each of which is called a channel \cite{jurafskySpeechLanguageProcessing2025}.
 
-\subsubsection{Text normalization}
+It is also common for modern ASR systems to normalize their audio input.
+\citet{baevskiWav2vec20Framework} rescale the input of wav2vec~2.0 to have zero mean and unit variance.
+With Whisper, \citet{radfordRobustSpeechRecognition2023} normalize the computed channels to lie within the range $[-1,1]$ and to also have approximately zero mean.
 
-Many ASR systems apply some form of text normalization to the transcriptions in the training data \cite{jurafskySpeechLanguageProcessing2025}.
-This step is mostly rule based and might include stripping out punctuation marks, converting everything to upper case or standardizing spelling to the same language variant (e.g. US versus UK English).
-If needed, inverse text normalization is then applied to the output of the speech recognition model.
+\subsubsection{Text Normalization}
+
+Historically, ASR systems were often trained to produce normalized transcriptions, stripped of any punctuation and entirely upper or lower case, standardized spelling and with dates, numbers and symbols turned into a standardized form, e.g.\ \enquote{25} into \enquote{twenty-five} or \enquote{six dollars} into \enquote{\$6}.
+These systems thus often implemented inverse text normalization---mapping the standardized transcripts back to naturalistic text, possibly using a different locale.
+
+With Whisper, \citet{radfordRobustSpeechRecognition2023} demonstrated that modern ASR architectures are capable of directly learning the mapping between utterances and text transcripts, eliminating the need for such explicit text or inverse text normalization, thereby simplifying the speech recognition pipeline.
 
 \subsubsection{Attention-based Transformer Architecture}
 
-% TODO: maybe do this section as a historical overview of the previously used architectures in ASR? DNN, CNN, RNN and nowadays Transformer
+% TODO: also do this section as a historical overview of the previously used architectures in ASR: DNN, CNN, RNN and nowadays Transformer
 \citet{vaswaniAttentionAllYou2023} showed that the Transformer architecture, which entirely replaces recurrent connections with multi-headed self-attention, achieves performance surpassing competitive recurrent models of its time while requiring substantially lower training cost.
 This architecture also generalizes well to different sequence-to-sequence modeling tasks, such as ASR and has since provided the prevalent building blocks of state-of-the-art ASR systems.
 
@@ -249,9 +259,26 @@ Every output token $a_i$ in the output sequence $a_1, \ldots, a_T$ is assumed to
 \end{comment}
 As a result, the decoder added onto a pre-trained wav2vec~2.0 model cannot capture sequential dependencies between output tokens and does therefore not learn an implicit language model, unlike Whisper, which does not make this assumption.
 
-% TODO: write about how including a language model with decoding for wav2vec 2.0 helps and how it's done
+Not learning an implicit language model can partially be overcome by including an external language model when decoding (see section~\ref{sec:inference}).
+This approach might even be beneficial when transferring between different ASR domains:
+even though the language used in the domains might differ, the acoustics of speech often still remain similar.
+With a decoder trained only using CTC, a new language model can then simply be swapped in to adapt to the new domain.
 
 \subsubsection{Inference}\label{sec:inference}
+
+Both Whisper and wav2vec~2.0 use a decoder network, but inference is still very different for both systems.
+
+% TODO:
+\begin{comment}
+wav2vec 2.0:
+  CTC inference using beam search
+  language model inclusion
+whisper:
+  output tokens passed back in
+  autoregessive: what does this mean?
+  different tasks: how are they specified?
+  bpe output tokens
+\end{comment}
 
 \subsection{Evaluation}
 
@@ -260,6 +287,18 @@ As a result, the decoder added onto a pre-trained wav2vec~2.0 model cannot captu
 \subsubsection{Performance}
 
 \subsection{Conclusions}
+
+\begin{comment}
+wav2vec 2.0:
+  can be adapted to streaming
+whisper:
+  only offline/non-streaming usage
+    global attention
+    not optimized for latency
+  optimized for robustness and accuracy
+  multi-lingual
+  multi-task
+\end{comment}
 
 
 
