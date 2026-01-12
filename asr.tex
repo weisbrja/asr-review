@@ -153,7 +153,7 @@ This architecture also generalizes well to different sequence-to-sequence modeli
 
 \subsubsection{Motivations}
 
-The motivations behind wav2vec~2.0 and Whisper differ, yet they originate from a shared insight, as both address one of the central challenges for modern neural network--based ASR systems, as discussed in section~\ref{sec:challenges_in_asr}: the lack of (very) large labeled datasets.
+The motivations behind wav2vec~2.0 and Whisper differ, yet they originate from a shared insight, as both address one of the central challenges for modern neural network--based ASR systems, as discussed in Section~\ref{sec:challenges_in_asr}: the lack of (very) large labeled datasets.
 
 \citet{baevskiWav2vec20Framework} observe that, in principle, this issue should not prevent the development of highly accurate ASR systems---even in low-resource scenarios where only very small labeled datasets exist, which is the case for many of the world's lesser spoken languages.
 They draw this conclusion from the fact that human infants are also able to acquire language understanding without such labeled examples.
@@ -215,12 +215,12 @@ Additionally, \citet{baevskiWav2vec20Framework} employ a diversity loss with the
 Pre-training Whisper is conceptually simpler, since it uses a standard Transformer and sequence-to-sequence cross-entropy loss.
 
 With Whisper, the audio of a transcribed speech sample is first passed through the encoder.
-The decoder then autoregressively predicts the next transcript token given all previously correct tokens and whilst attending to the encoded audio using cross-attention, similar to inference as described in section~\ref{sec:inference}.
+The decoder then autoregressively predicts the next transcript token given all previously correct tokens and whilst attending to the encoded audio using cross-attention, similar to inference as described in Section~\ref{sec:inference}.
 
 The optimizer then minimizes the cross-entropy loss over the generated token.
 This is done for all exptected transcript tokens.
 
-Both models also employ (a modified version of) SpecAugment \citet{parkSpecAugmentSimpleData2019} to augment labeled training data, with wav2vec~2.0 using it during fine-tuning (see section~\ref{sec:fine-tuning}).
+Both models also employ (a modified version of) SpecAugment \citet{parkSpecAugmentSimpleData2019} to augment labeled training data, with wav2vec~2.0 using it during fine-tuning (Section~\ref{sec:fine-tuning}).
 
 % TODO; describe whisper's multi-task training: translation, transcription for multiple languages, voice activity detection, speaker diarization, time
 
@@ -232,16 +232,16 @@ Both models also employ (a modified version of) SpecAugment \citet{parkSpecAugme
 
 Pre-training a wav2vec~2.0 model only teaches it to produce contextualized speech representations rather than actual transcript text.
 To actually perform speech recognition, a linear decoder is appended to the context network of the pre-trained encoder-only model.
-This decoder maps each contextualized speech representation to a logit vector, followed by a softmax to produce a probability distribution over the output vocabulary, e.g.\ characters, punctuation marks or subword tokens.
+This decoder maps each contextualized speech representation to a logit vector, followed by a softmax to produce a probability distribution over the output vocabulary, e.g.\ characters or phonemes as well as a CTC boundary symbol.
 Training this initially randomized decoder in a fine-tuning step is therefore a necessity in applying a pre-trained wav2vec~2.0 model to a task such as ASR.
 
-In contrast, Whisper is already trained on large amounts of labeled speech samples and can perform ASR in zero-shot setting, making fine-tuning optional---one of the primary research goals of \citet{radfordRobustSpeechRecognition2023}.
+In contrast, Whisper is already trained on large amounts of labeled speech samples and can perform ASR in zero-shot setting, making fine-tuning optional---one of the research goals of \citet{radfordRobustSpeechRecognition2023}.
 
 The actual fine-tuning of wav2vec~2.0 performed by \citet{baevskiWav2vec20Framework} uses CTC loss \cite{gravesConnectionistTemporalClassification} with some (possibly very little) labeled speech data.
 The learned feature encoder stays fixed and is not trained during this process.
 Latent speech features produced by it are however tampered with during fine-tuning using a method similar to SpecAugment \cite{parkSpecAugmentSimpleData2019}, as previously stated, because this improves generalization and robustness.
 
-Fine-tuning the decoder using CTC loss has the goal of maximizing the probability of the model outputting the correct transcript, when all duplicate output tokens, e.g.\ characters, between blank tokens are collapsed, as this collapsing also happens during inference (see section~\ref{sec:inference}).
+Fine-tuning the decoder using CTC loss has the goal of maximizing the probability of the model outputting the correct transcript, when all duplicate output tokens, e.g.\ characters or phonemes, between CTC boundary tokens are collapsed, as this collapse also happens during inference (Section~\ref{sec:inference}).
 Different alignments of the input audio (or the generated speech representations) and the output tokens are therefore explicitly not considered, as they all amount to the same transcript being generated.
 
 The CTC loss thus marginalizes over all valid alignments of output tokens---the sequences that collapse to the ground-truth transcript.
@@ -257,28 +257,44 @@ Every output token $a_i$ in the output sequence $a_1, \ldots, a_T$ is assumed to
   P(a_1, a_2, \ldots, a_T\mid X) = \prod_{t=1}^T P(a_t\mid X)
 \end{equation*}
 \end{comment}
-As a result, the decoder added onto a pre-trained wav2vec~2.0 model cannot capture sequential dependencies between output tokens and does therefore not learn an implicit language model, unlike Whisper, which does not make this assumption.
+As a result, the decoder added onto a pre-trained wav2vec~2.0 model cannot capture sequential dependencies between output tokens and does therefore not learn an implicit language model, unlike Whisper, which does not make this assumption of conditional independence.
 
-Not learning an implicit language model can partially be overcome by including an external language model when decoding (see section~\ref{sec:inference}).
-This approach might even be beneficial when transferring between different ASR domains:
+Not learning an implicit language model can partially be overcome by including an external language model when decoding (Section~\ref{sec:inference}).
+It is even possible for this approach to prove beneficial, for example when transferring between different ASR domains:
 even though the language used in the domains might differ, the acoustics of speech often still remain similar.
-With a decoder trained only using CTC, a new language model can then simply be swapped in to adapt to the new domain.
+With a decoder trained only using CTC, a new language model can then simply be swapped in to adapt to the new domain \cite{jurafskySpeechLanguageProcessing2025}.
 
 \subsubsection{Inference}\label{sec:inference}
 
-Both Whisper and wav2vec~2.0 use a decoder network, but inference is still very different for both systems.
+Both Whisper and wav2vec~2.0 use a decoder network---albeit of quite different complexity---to convert the latent representations produced by their respective encoders into output tokens for inference.
 
-% TODO:
-\begin{comment}
-wav2vec 2.0:
-  CTC inference using beam search
-  language model inclusion
-whisper:
-  output tokens passed back in
-  autoregessive: what does this mean?
-  different tasks: how are they specified?
-  bpe output tokens
-\end{comment}
+Whisper's decoder generates BPE tokens, necessitating a mapping step to achieve a human readable transcript, while wav2vec~2.0 already generates characters (or phonemes) but still requires the CTC collapse described in Section~\ref{sec:fine-tuning} to generate the final transcript.
+
+The biggest difference in inference between wav2vec~2.0 and Whisper is due to the conditional independence assumption made only by the former, but not the latter.
+
+Because \citet{baevskiWav2vec20Framework} assume output tokens to only depend on the latent representations generated by the encoder and be independent of each other, inference of an output token for each time step of the input audio can be done in parallel.
+The CTC collapse then only requires a further linear pass over the generated output tokens.
+
+For Whisper, inference happens autoregressively instead.
+When generating a new output token, the decoder not only attends to the latent representations of the encoder through cross attention, but also to all previously generated output tokens---each using a learned positional encoding---using causal (left-to-right) self-attention.
+This autoregessive property causes inference to be inherently sequential, making it computationally less efficient than the inference for wav2vec~2.0.
+
+Because the decoders of both Whisper and wav2vec~2.0 output a probability distribution over the possible output tokens rather than a single concrete token, this distribution must then be converted into an actual prediction via a decoding strategy.
+This can be done, for example, by greedy decoding, which selects the most probable token, or by beam search.
+
+Beam search works by keeping the most probable candidate sequences of output tokens in a search beam.
+At each step, every sequence in the beam is extended by all possible next output tokens, the probabilities of the resulting sequences are calculated by accumulating output token probabilities computed by the model, and then only the most probable sequences are retained for the next step.
+
+This decoding strategy incurs additional computational cost compared to greedy decoding, but it also enables the incorporation of an external language model in the decoding process.
+
+This can be achieved by rescoring each candidate sequence in the beam, interpolating the probability assigned by the external language model with the probability computed by the decoder using a certain weighting factor.
+Additionally, since language models tend to prefer shorter sequences, a length normalization term is also included in this rescoring.
+
+% TODO: add references to evaluation of incorporating LLMs for inference
+Since wav2vec~2.0 does not learn an implicit language model (Section~\ref{sec:fine-tuning}), integrating such an external language model (at least for transcript generation) is particularly beneficial \cite{baevskiWav2vec20Framework}.
+For Whisper, the usage of an external language models can still improve transcript quality, as its implicit language model is trained on substantially less text data than modern LLMs \cite{jurafskySpeechLanguageProcessing2025}.
+
+% TODO: different tasks: how are they specified in whisper?
 
 \subsection{Evaluation}
 
@@ -295,12 +311,19 @@ whisper:
   only offline/non-streaming usage
     global attention
     not optimized for latency
-  optimized for robustness and accuracy
+  optimized for robustness (very important in asr) and accuracy
   multi-lingual
   multi-task
+
+  WER calculation: first apply text normalization
+
+general trends:
+  more capable models (e.g. translation, multi-language in whisper) trained on even more (labeled) data
+  unsupervised learning in (ultra-)low-resource scenarios?
+  transformer has emerged as superior architecture
+  more of the ASR pipeline built directly into models, such as inverse text normalization in whisper
+  more joint learning e.g. of representations, positional encodings, attention
 \end{comment}
-
-
 
 \begin{comment}
 
@@ -316,7 +339,7 @@ whisper:
 % attention looks backwards AND forwards -> only applicable on offline data?
 
 \citet{baevskiWav2vec20Framework} conclude that pre-training speech recognition models on unlabeled data shows large potential, especially for ultra--low resource scenarios with very little labeled speech data available.
-This could improve the availability of speech recognition systems for many lesser spoken languages as well as dialects, as this still remains a challenge in ASR (see section \ref{sec:challenges_in_asr}).
+This could improve the availability of speech recognition systems for many lesser spoken languages as well as dialects, as this still remains a challenge in ASR (Section \ref{sec:challenges_in_asr}).
 
 % TODO: compare size of models
 
@@ -332,28 +355,7 @@ Motivated by these trends, \citet{radfordRobustSpeechRecognition2023} identified
 % no need for self-supervision, instead relying on more weakly-supervised data
 % wav2vec 2.0 better for low-resource languages?
 
-% whisper doesn't use (inverse) text normalization, except when filtering out bad transcripts
-
-
-% supervised fine-tuning after unsupervised pre-training in wav2vec 2.0/weakly-supervised pre-training in whisper
-% convolutions as preprocessing step
-% pre-activation residual blocks by having layer norm applied first
-
 \end{comment}
-
-% positional encoding
-
-% in whisper:
-% 1d convolutional layers compress input sequence and compute speech features
-
-% talk about WER calculation by applying text normalization first
-
-% general trends:
-% more capable models (e.g. translation, multi-language in whisper) trained on even more (labeled) data
-% unsupervised learning in (ultra-)low-resource scenarios?
-% transformer has emerged as superior architecture
-% more of the ASR pipeline built directly into models, such as inverse text normalization in whisper
-% more joint learning e.g. of representations, positional encodings, attention
 
 \bibliography{zotero}
 
