@@ -138,7 +138,7 @@ With Whisper, \citet{radfordRobustSpeechRecognition2023} normalize the computed 
 
 \subsubsection{Text Normalization}
 
-Historically, ASR systems were often trained to produce normalized transcriptions, stripped of any punctuation and entirely upper or lower case, standardized spelling and with dates, numbers and symbols turned into a standardized form, e.g.\ \enquote{25} into \enquote{twenty-five} or \enquote{six dollars} into \enquote{\$6}.
+Historically, ASR systems were often trained to produce normalized transcriptions, stripped of any punctuation and entirely upper or lower case, using standardized spelling and with dates, numbers and symbols turned into a standardized form, e.g.\ \enquote{twenty-five} into \enquote{25} or \enquote{six dollars} into \enquote{\$6}.
 These systems thus often implemented inverse text normalization---mapping the standardized transcripts back to naturalistic text, possibly using a different locale.
 
 With Whisper, \citet{radfordRobustSpeechRecognition2023} demonstrated that modern ASR architectures are capable of directly learning the mapping between utterances and text transcripts, eliminating the need for such explicit text or inverse text normalization, thereby simplifying the speech recognition pipeline.
