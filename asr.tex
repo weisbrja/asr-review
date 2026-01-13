@@ -9,6 +9,8 @@
 \usepackage{latexsym}
 
 \usepackage[english]{babel}
+\hyphenation{OpenAI} % TODO: is this correct and how to achieve similar thing for wav2vec 2.0?
+
 \usepackage{siunitx}
 \usepackage{mathptmx}
 
@@ -81,23 +83,30 @@ Today, automatic transcription is used ubiquitously not only in fields like law,
 Advances in ASR not only enhance accessibility for individuals with typing or hearing impairments, but also generally provide a more natural interface for interacting with modern machines.
 Despite the progress, accurate automatic transcription of speech by any speaker in any environment still remains a challenging problem that is far from solved.
 
-In this review, we will describe the ASR task and the challenges in achieving high accuracy transcriptions.
-We will then talk in detail about the different approaches taken by two modern ASR systems, comparing their design, goals and performance.
-% TODO: historic development of performance metric
+In this review, we begin by introducing the ASR task and outlining the challenges involved in producing accurate transcriptions of speech.
+We then examine how ASR systems process speech, covering common techniques and the architectures underlying modern ASR models.
+Next, we focus on two representative ASR systems, describing and comparing their architectures, training procedures and inference processes, before discussing evaluation and their performance.
+We conclude by summarizing the insights provided by these models, as well as outlining remaining open questions and ongoing challenges in the field of ASR.
 
 \section{Challenges in ASR}\label{sec:challenges_in_asr}
 
-The ASR task varies along multiple dimensions, one of them being vocabulary size.
-Some low vocabulary tasks in speech recognition such as digit recognition or detecting \enquote{yes} versus \enquote{no} answers have been solved for quite a while.
-Tasks that require accurate transcription of speech using an unrestricted large vocabulary, like videos or conversations, represent much harder challenges \cite{jurafskySpeechLanguageProcessing2025}.
+The complexity of the ASR task can be factored along multiple dimensions that each affect transcription accuracy.
 
-A very important dimension is given by the environment and setup used for recording the audio data to be transcribed.
+\paragraph{Vocabulary Size and Domain-Specific Language}
+A major challenge in ASR is recognizing a large and potentially specialized vocabulary.
+While some low vocabulary tasks such as digit recognition or detecting \enquote{yes} versus \enquote{no} answers have been effectively solved for some time, transcribing unconstrained speech with a large general vocabulary---such as in videos or conversations---remains considerably more difficult \cite{jurafskySpeechLanguageProcessing2025}.
+The presence of domain-specific language, such as medical, legal or technical terminology, further increases the challenge, as such specialized words are often underrepresented in training data and harder for models to recognize accurately.
+
+\paragraph{Audio Quality and Environmental Factors}
+Another very important dimension is given by the environment and setup used for recording the audio data to be transcribed.
 Audio recorded in a quiet studio setting close to a high quality microphone and without much noise is much easier to transcribe than audio recorded on a busy street or inside a restaurant with the source of the audio being far away from the recording microphone.
 
+\paragraph{Conversational Speech}
 It also matters who the speaker is talking to.
 Conversational speech between humans is much harder to transcribe accurately than speech addressed directly towards a machine, as speakers tend to use a more simple register as well as articulating themselves more clearly in the latter scenarios.
 The transcription of conversational speech is also generally much more challenging due to a higher speaker count and---at least for accurate transcription---the added requirement of needing to identify who speaks when (speaker diarization).
 
+\paragraph{Variability in Language and Speaker Characteristics}
 At last, varying speaker characteristics, including accent and style, add another dimension to the task of ASR.
 Spoken language also frequently contains disfluencies, such as fragmented, repeated or truncated words (e.g. \enquote{main- mainly}), as well as filled pauses (e.g. \enquote{uhm}, \enquote{uh}).
 These sources of variation are heavily compounded by the large number of spoken languages, for many of which large amounts of labeled data simply do not exist \cite{baevskiWav2vec20Framework}.
@@ -106,13 +115,15 @@ Additionally, code-switching---the use of multiple languages in the same utteran
 
 \section{Approaches to ASR}
 
-Historically, there have been many approaches to the ASR task.
-In this review, however, we focus on and compare two specific speech recognition models representing distinct paradigms:
-wav2vec~2.0 \citep{baevskiWav2vec20Framework}, a self-supervised encoder-only model fine-tuned with CTC loss, and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}, a state-of-the-art weakly-supervised encoder-decoder model.
+Historically, a wide range of approaches have been developed and applied to the ASR task.
+In this section, we provide an overview of modern ASR systems, highlighting the use of neural network--based model architectures, and in particular the dominance of Transformer-based models.
+We then examine and compare two representative systems---wav2vec~2.0 \citep{baevskiWav2vec20Framework} and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}---discussing architectures, training, inference and evaluation of their performance. % TODO: add further points discussed in this section here.
 
 \subsection{Common Techniques in ASR}
 
-Before diving into the mentioned speech recognition models, we will first discuss some common techniques applied not only in the reference systems, but also many other ASR systems.
+Before examining these specific speech recognition models, it is useful to review techniques commonly used across both the reference and other ASR systems.
+
+\paragraph{ASR Pipeline}
 Speech recognition systems often times consist of multiple components, built around a core speech recognition model.
 Most of the time, these components are arranged as a pipeline and can include audio format conversion, feature extraction, subsampling, voice activity detection and (inverse) text normalization \cite{radfordRobustSpeechRecognition2023}.
 
@@ -120,21 +131,24 @@ Most of the time, these components are arranged as a pipeline and can include au
 
 ASR systems often have exact requirements on the format of the audio data they process.
 
+\paragraph{Raw Waveform}
 The most basic representation of audio data, used for example by wav2vec~2.0, is referred to as the raw waveform.
 This format represents audio data simply by the amplitude of the recorded sound waves at each time frame.
 These amplitudes are digitized by sampling them at a certain sampling frequency and quantizing them to a certain bit depth.
+
 Since speech recognition systems typically require their audio input to have a fixed sampling frequency (e.g.\ $\SI{16}{\kilo\hertz}$ for wav2vec 2.0 and Whisper) and a fixed bit depth, recorded audio data often needs to be resampled and requantized before it can be processed.
 
-Other ASR systems, such as Whisper, operate on a different audio representation and therefore require an additional preprocessing step.
+\paragraph{Log Mel Spectrum}
+Other ASR models, such as Whisper, operate on a different audio representation and therefore require an additional preprocessing step.
 Instead of processing the raw waveform directly, the system first computes the so called log mel spectrum for small windows of time (characterized by the window size, stride and shape) and uses the resulting feature vectors as the input.
 
 The mel is a unit of pitch representing the human perception of changes in pitch (which is roughly linear for frequencies between $\SI{100}{\hertz}$ and $\SI{1000}{\hertz}$ and logarithmic for frequencies above this range) more accurately than raw frequency values.
 By computing the frequencies present in the audio signal for each time window using a Fourier transform, we can sample the mel spectrum values for this time window by accumulating the energy levels of each frequency range using a mel filter bank.
 Because human perception of amplitude is also logarithmic, we then take the log of each of the mel spectrum values, resulting in a vector of scalars, each of which is called a channel \cite{jurafskySpeechLanguageProcessing2025}.
 
+\paragraph{Normalization}
 It is also common for modern ASR systems to normalize their audio input.
-\citet{baevskiWav2vec20Framework} rescale the input of wav2vec~2.0 to have zero mean and unit variance.
-With Whisper, \citet{radfordRobustSpeechRecognition2023} normalize the computed channels to lie within the range $[-1,1]$ and to also have approximately zero mean.
+\citet{baevskiWav2vec20Framework} rescale the input of wav2vec~2.0 to have zero mean and unit variance, while \citet{radfordRobustSpeechRecognition2023} normalize the computed channels to lie within the range $[-1,1]$ and to also have approximately zero mean before processing them with Whisper.
 
 \subsubsection{Text Normalization}
 
@@ -143,13 +157,48 @@ These systems thus often implemented inverse text normalization---mapping the st
 
 With Whisper, \citet{radfordRobustSpeechRecognition2023} demonstrated that modern ASR architectures are capable of directly learning the mapping between utterances and text transcripts, eliminating the need for such explicit text or inverse text normalization, thereby simplifying the speech recognition pipeline.
 
-\subsubsection{Attention-based Transformer Architecture}
+\subsection{Neural Network--Based Model Architectures}
 
-% TODO: also do this section as a historical overview of the previously used architectures in ASR: DNN, CNN, RNN and nowadays Transformer
-\citet{vaswaniAttentionAllYou2023} showed that the Transformer architecture, which entirely replaces recurrent connections with multi-headed self-attention, achieves performance surpassing competitive recurrent models of its time while requiring substantially lower training cost.
-This architecture also generalizes well to different sequence-to-sequence modeling tasks, such as ASR and has since provided the prevalent building blocks of state-of-the-art ASR systems.
+Now that we have discussed some of the pre- and post-processing steps commonly included in ASR systems, we turn to the main component of modern ASR pipelines:
+a neural network responsible for converting speech features into output tokens.
 
-\subsection{Comparison of wav2vec~2.0 and Whisper}
+As in other areas of machine learning, neural networks have long become the dominant modeling approach, especially in NLP.
+
+Over time, the state-of-the-art models for ASR have deployed many different architectures, ranging from feedforward to convolutional and recurrent models, ultimately converging on attention-based designs.
+
+\subsubsection{Transformer Architecture}
+
+In particular, the Transformer architecture, proposed by \citet{vaswaniAttentionAllYou2023}, now forms the prevalent foundation used by most state-of-the-art ASR systems, reflecting a broader trend in machine learning.
+
+The Transformer architecture uses a self-attention mechanism to compute context-aware representations for each element in the input sequence by combining information from all positions, enabling the model to capture dependencies across the entire input sequence.
+
+\paragraph{Self-Attention}
+Self-attention is computed by projecting each element of the input sequence is into query, key and value vectors, and using the dot-product similarity between a query and all keys to produce attention scores, which are then normalized and used as weights to sum the corresponding value vectors.
+
+\paragraph{Multi-Head Attention}
+To capture multiple types of relationships in parallel, a single self-attention layer deploys multiple attention heads, where each head has its own projections for computing query, key and value vectors and performs the attention calculation independently; the outputs of all attention heads are then concatenated and projected into a single contextualized representation.
+
+\paragraph{Transformer Blocks}
+These multi-headed self-attention computations as well as an additional feedforward network are then combined into a single Transformer block, each of them residually adding context to each input vector.
+
+\paragraph{Encoder-Decoder Architecture}
+Stacking such blocks can be used to create an encoder that transforms each feature vector of the input sequence into a contextualized representation.
+
+A decoder can be built in a similar way, however with self-attention being causal (left-to-right) instead.
+The first decoder block is then given all previous output tokens as input and in every decoder block, a feature vector may only attend to previous positions.
+
+\paragraph{Cross-Attention}
+Additionally, through cross-attention, the decoder can attend to the entire sequence of feature vectors generated by the encoder by using the outputs of the previous decoder block as queries, while the keys and values come from the encoder output.
+
+\paragraph{Benefits}
+The Transformer architecture outperformed earlier speech recognition models, including recurrent networks, primarily because it captures long-range temporal dependencies in the input audio more effectively while simultaneously enabling parallel computation across the input sequence.
+
+This has since made it a prevalent building block in many state-of-the-art ASR systems, including wav2vec~2.0 and Whisper.
+
+\subsection{Comparison of ASR models}\label{sec:comparison_of_models}
+
+Having established both the general role of neural networks and in particular Transformer-based architectures as the core of modern ASR systems, we will now look at two concrete models, illustrating very different paradigms of modern Transformer-based ASR:
+wav2vec~2.0 \citep{baevskiWav2vec20Framework}, a self-supervised encoder-only model fine-tuned with CTC loss, and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}, a state-of-the-art, weakly-supervised encoder-decoder model.
 
 \subsubsection{Motivations}
 
