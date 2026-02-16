@@ -1,8 +1,18 @@
-@article{baevskiWav2vec20Framework,
+@online{baevskiWav2vec20Framework2020,
   title = {Wav2vec 2.0: {{A Framework}} for {{Self-Supervised Learning}} of {{Speech Representations}}},
+  shorttitle = {Wav2vec 2.0},
   author = {Baevski, Alexei and Zhou, Henry and Mohamed, Abdelrahman and Auli, Michael},
-  langid = {english},
-  file = {/home/weisbrja/kit/zotero/storage/79S7DCZ8/Baevski et al. - wav2vec 2.0 A Framework for Self-Supervised Learning of Speech Representations.pdf}
+  date = {2020-10-22},
+  eprint = {2006.11477},
+  eprinttype = {arXiv},
+  eprintclass = {cs},
+  doi = {10.48550/arXiv.2006.11477},
+  url = {http://arxiv.org/abs/2006.11477},
+  urldate = {2026-01-30},
+  abstract = {We show for the first time that learning powerful representations from speech audio alone followed by fine-tuning on transcribed speech can outperform the best semi-supervised methods while being conceptually simpler. wav2vec 2.0 masks the speech input in the latent space and solves a contrastive task defined over a quantization of the latent representations which are jointly learned. Experiments using all labeled data of Librispeech achieve 1.8/3.3 WER on the clean/other test sets. When lowering the amount of labeled data to one hour, wav2vec 2.0 outperforms the previous state of the art on the 100 hour subset while using 100 times less labeled data. Using just ten minutes of labeled data and pre-training on 53k hours of unlabeled data still achieves 4.8/8.2 WER. This demonstrates the feasibility of speech recognition with limited amounts of labeled data.},
+  pubstate = {prepublished},
+  keywords = {Computer Science - Computation and Language,Computer Science - Machine Learning,Computer Science - Sound,Electrical Engineering and Systems Science - Audio and Speech Processing},
+  file = {/home/weisbrja/kit/zotero/storage/N2CWZQE6/Baevski et al. - 2020 - wav2vec 2.0 A Framework for Self-Supervised Learning of Speech Representations.pdf;/home/weisbrja/kit/zotero/storage/UYLISQ7X/2006.html}
 }
 
 @online{baLayerNormalization2016,
@@ -158,6 +168,22 @@
   abstract = {We introduce a new collection of spoken English audio suitable for training speech recognition systems under limited or no supervision. It is derived from open-source audio books from the LibriVox project. It contains over 60K hours of audio, which is, to our knowledge, the largest freely-available corpus of speech. The audio has been segmented using voice activity detection and is tagged with SNR, speaker ID and genre descriptions. Additionally, we provide baseline systems and evaluation metrics working under three settings: (1) the zero resource/unsupervised setting (ABX), (2) the semi-supervised setting (PER, CER) and (3) the distant supervision setting (WER). Settings (2) and (3) use limited textual resources (10 minutes to 10 hours) aligned with the speech. Setting (3) uses large amounts of unaligned text. They are evaluated on the standard LibriSpeech dev and test sets for comparison with the supervised state-of-the-art.},
   keywords = {Computer Science - Computation and Language,Computer Science - Sound,Electrical Engineering and Systems Science - Audio and Speech Processing},
   file = {/home/weisbrja/kit/zotero/storage/HLEIB9BR/Kahn et al. - 2020 - Libri-Light A Benchmark for ASR with Limited or No Supervision.pdf;/home/weisbrja/kit/zotero/storage/DH5YNDG9/1912.html}
+}
+
+@online{liRecentAdvancesEndtoEnd2022,
+  title = {Recent {{Advances}} in {{End-to-End Automatic Speech Recognition}}},
+  author = {Li, Jinyu},
+  date = {2022-02-02},
+  eprint = {2111.01690},
+  eprinttype = {arXiv},
+  eprintclass = {eess},
+  doi = {10.48550/arXiv.2111.01690},
+  url = {http://arxiv.org/abs/2111.01690},
+  urldate = {2026-01-31},
+  abstract = {Recently, the speech community is seeing a significant trend of moving from deep neural network based hybrid modeling to end-to-end (E2E) modeling for automatic speech recognition (ASR). While E2E models achieve the state-of-the-art results in most benchmarks in terms of ASR accuracy, hybrid models are still used in a large proportion of commercial ASR systems at the current time. There are lots of practical factors that affect the production model deployment decision. Traditional hybrid models, being optimized for production for decades, are usually good at these factors. Without providing excellent solutions to all these factors, it is hard for E2E models to be widely commercialized. In this paper, we will overview the recent advances in E2E models, focusing on technologies addressing those challenges from the industry's perspective.},
+  pubstate = {prepublished},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Computation and Language,Computer Science - Sound,Electrical Engineering and Systems Science - Audio and Speech Processing},
+  file = {/home/weisbrja/kit/zotero/storage/YNUB4TXW/Li - 2022 - Recent Advances in End-to-End Automatic Speech Recognition.pdf;/home/weisbrja/kit/zotero/storage/EWQNK2KC/2111.html}
 }
 
 @inproceedings{morrisWERRILMER2004,
