@@ -12,6 +12,7 @@
 % TODO: is this correct and how to achieve similar thing for wav2vec 2.0?
 \hyphenation{OpenAI}
 \hyphenation{LibriSpeech}
+\hyphenation{LibriVox}
 
 \usepackage{siunitx}
 \usepackage{mathptmx}
@@ -117,18 +118,20 @@ All of these factors make speech recognition under real-world conditions signifi
 \section{Approaches to ASR}
 
 Historically, a wide range of approaches have been developed and applied to the ASR task.
-In this section, we provide an overview of modern ASR systems, highlighting the use of neural network--based model architectures, and in particular the dominance of Transformer-based models.
-We then examine and compare two representative systems---wav2vec~2.0 \citep{baevskiWav2vec20Framework2020} and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}---discussing architectures, training, inference and evaluation of their performance. % TODO: add further points discussed in this section here.
-
-\subsection{Common Techniques in ASR}
-
-Before examining these specific speech recognition models, it is useful to review techniques commonly used across both the reference and other ASR systems.
 
 \paragraph{ASR Pipeline}
-Speech recognition systems often times consist of multiple components, built around a core speech recognition model.
-Most of the time, these components are arranged as a pipeline and can include audio format conversion, feature extraction, subsampling, voice activity detection and inverse text normalization \cite{radfordRobustSpeechRecognition2023}.
+Speech recognition systems typically consist of multiple components, arranged in a pipeline built around a core speech recognition model.
+These components can include audio format conversion, feature extraction, subsampling, voice activity detection and inverse text normalization \cite{radfordRobustSpeechRecognition2023}.
 
-\subsubsection{Speech Feature Extraction}
+\paragraph{End-to-End ASR Systems}
+More recent end-to-end ASR systems, such as Whisper \cite{radfordRobustSpeechRecognition2023}, combine many of the traditional pipeline steps into a single model, instead of splitting them into clearly separated components \cite{prabhavalkarEndtoEndSpeechRecognition2023}.
+
+However, many of the ideas described below are still somehow used within these systems.
+
+In this section, we will therefore provide an overview of the classic ASR pipeline and its three main components: speech feature extraction, the speech recognition model and inverse text normalization.
+When discussing the speech recognition model itself, we focus on the use of neural network--based architectures, and in particular the recent dominance of Transformer-based models.
+
+\subsection{Speech Feature Extraction}
 
 ASR systems often have exact requirements on the format of the audio data they process.
 
@@ -137,10 +140,10 @@ The most basic representation of audio data, used for example by wav2vec~2.0, is
 This format represents audio data simply by the amplitude of the recorded sound waves at each time frame.
 These amplitudes are digitized by sampling them at a certain sampling frequency and quantizing them to a certain bit depth.
 
-Since speech recognition systems typically require their audio input to have a fixed sampling frequency (e.g.\ $\SI{16}{\kilo\hertz}$ for wav2vec 2.0 and Whisper) and a fixed bit depth, recorded audio data often needs to be resampled and requantized before it can be processed.
+Since speech recognition systems typically require their audio input to have a fixed sampling frequency (e.g.\ $\SI{16}{\kilo\hertz}$ for wav2vec 2.0 \cite{baevskiWav2vec20Framework2020} and Whisper \cite{radfordRobustSpeechRecognition2023}) and a fixed bit depth, recorded audio data often needs to be resampled and requantized before it can be processed.
 
 \paragraph{Log Mel Spectrum}
-Other ASR models, such as Whisper, operate on a different audio representation and therefore require an additional preprocessing step.
+Other ASR models, such as Whisper \citep{radfordRobustSpeechRecognition2023}, operate on a different audio representation and therefore require an additional preprocessing step.
 Instead of processing the raw waveform directly, the system first computes the so called log mel spectrum for small windows of time (characterized by the window size, stride and shape) and uses the resulting feature vectors as the input.
 
 The mel is a unit of pitch representing the human perception of changes in pitch (which is roughly linear for frequencies between $\SI{100}{\hertz}$ and $\SI{1000}{\hertz}$ and logarithmic for frequencies above this range) more accurately than raw frequency values.
@@ -151,33 +154,26 @@ Because human perception of amplitude is also logarithmic, we then take the log 
 It is also common for modern ASR systems to normalize their audio input.
 \citet{baevskiWav2vec20Framework2020} rescale the input of wav2vec~2.0 to have zero mean and unit variance, while \citet{radfordRobustSpeechRecognition2023} normalize the computed channels to lie within the range $[-1,1]$ and to also have approximately zero mean before processing them with Whisper.
 
-\subsubsection{Text Normalization}\label{sec:text_normalization}
+\subsection{Speech Recognition Model}
 
-Historically, ASR systems were often trained to produce normalized transcriptions, stripped of any punctuation and entirely upper or lower case, using standardized spelling and with dates, numbers and symbols turned into a standardized form, e.g.\ \enquote{25} into \enquote{twenty-five} or \enquote{\$6} into \enquote{six dollars}.
-To actually produce naturalistic transcripts, these systems therefore often implemented an inverse mapping of the standardized transcriptions back to naturalistic text, possibly applying a specific locale in the process.
-This step is often accordingly called inverse text normalization.
-
-With Whisper, \citet{radfordRobustSpeechRecognition2023} demonstrated that modern end-to-end ASR architectures are capable of directly learning the mapping between utterances and text transcripts, eliminating the need for such explicit text or inverse text normalization, thereby simplifying the speech recognition pipeline.
-
-\subsection{Neural Network--Based Model Architectures}
-
-Now that we have discussed some of the pre- and post-processing steps commonly included in ASR systems, we turn to the main component of modern ASR pipelines:
-a neural network responsible for converting speech features into output tokens.
+Now that we have discussed the pre-processing of the input audio in the form of feature extraction, we turn to the main component of modern ASR pipelines:
+a speech recognition model responsible for converting the extracted speech features into output tokens.
 
 More formally, the speech recognition model solves the task of computing the conditional probability $p(\mathbf{y}\mid\mathbf{x})$ of a sequence of linguistic units $\mathbf{y}=(y_1,\ldots,y_m)$ given the extracted speech features $\mathbf{x}=(x_1,\ldots,x_n)$.
+The probability distributions over the linguistic units (output tokens) can then be sampled to generate actual transcriptions of the input audio \cite{jurafskySpeechLanguageProcessing2025}.
 
+\paragraph{Neural Network--Based Model Architectures}
 As in many other machine learning domains---particularly in NLP---the model is typically implemented using neural networks.
 Over time, various neural architectures have been applied, including feedforward, convolutional, and recurrent models.
-In recent years, many state-of-the-art systems have increasingly adopted attention-based designs.
+In recent years, many state-of-the-art systems have increasingly adopted attention-based designs \cite{prabhavalkarEndtoEndSpeechRecognition2023}.
 
-\subsubsection{Transformer Architecture}
-
-In particular, the Transformer architecture, proposed by \citet{vaswaniAttentionAllYou2023}, now forms the prevalent foundation used by most state-of-the-art ASR systems, reflecting a broader trend in machine learning.
+\paragraph{Transformer Architecture}
+In particular, the Transformer architecture, proposed by \citet{vaswaniAttentionAllYou2023}, now forms the prevalent foundation used by many state-of-the-art ASR systems, reflecting a broader trend in machine learning.
 
 The Transformer architecture uses a self-attention mechanism to compute context-aware representations for each element in the input sequence by combining information from all positions, enabling the model to capture dependencies across the entire input sequence.
 
 \paragraph{Self-Attention}
-Self-attention is computed by projecting each element of the input sequence is into query, key and value vectors, and using the dot-product similarity between a query and all keys to produce attention scores, which are then normalized and used as weights to sum the corresponding value vectors.
+Self-attention is computed by projecting each element of the input sequence into query, key and value vectors, and using the dot-product similarity between a query and all keys to produce attention scores, which are then normalized and used as weights to sum the corresponding value vectors.
 
 \paragraph{Multi-Head Attention}
 To capture multiple types of relationships in parallel, a single self-attention layer deploys multiple attention heads, where each head has its own projections for computing query, key and value vectors and performs the attention calculation independently; the outputs of all attention heads are then concatenated and projected into a single contextualized representation.
@@ -194,47 +190,70 @@ The first decoder block is then given all previous output tokens as input and in
 \paragraph{Cross-Attention}
 Additionally, through cross-attention, the decoder can attend to the entire sequence of feature vectors generated by the encoder by using the outputs of the previous decoder block as queries, while the keys and values come from the encoder output.
 
-\paragraph{Advantages}
+\paragraph{Advantages of Transformer-based Architectures}
 The Transformer architecture outperformed earlier speech recognition models, including recurrent networks, primarily because it captures long-range temporal dependencies in the input audio more effectively while simultaneously enabling parallel computation across the input sequence.
 
 This has since made it a prevalent building block in many state-of-the-art ASR systems, including wav2vec~2.0 and Whisper.
 
+\subsection{Inverse Text Normalization}\label{sec:inverse_text_normalization}
+
+After discussing how the speech recognition model transforms speech features into output tokens resulting in a transcription of the input audio, we will talk about a post-processing step often applied to the generated transcriptions as a last part of the ASR pipeline.
+
+\paragraph{Text Normalization}
+Historically, ASR systems were often trained to produce normalized transcriptions, stripped of any punctuation and entirely upper or lower case, using standardized spelling and with dates, numbers and symbols turned into a standardized form, e.g.\ \enquote{25} into \enquote{twenty-five} or \enquote{\$6} into \enquote{six dollars}.
+
+\paragraph{Inverse Text Normalization}
+To actually produce naturalistic transcripts, these systems therefore often implemented an inverse mapping of the standardized transcriptions back to conventional written text, possibly applying a specific locale in the process.
+This step is often accordingly called inverse text normalization.
+
+\paragraph{End-to-End ASR Models}
+Newer end-to-end spech recognition systems, such as Whisper \cite{radfordRobustSpeechRecognition2023}, directly learn the mapping between utterances and their textual transcripts, eliminating the need for explicit inverse text normalization, thereby simplifying the speech recognition pipeline.
+
 \section{Comparison of ASR models}\label{sec:comparison_of_models}
 
-Having outlined the modern approach to ASR, in which neural networks---particularly Transformer-based architectures---act as the core component of the speech recognition system, we now examine two representative models that illustrate different paradigms of contemporary Transformer-based ASR:
+Having outlined the classic pipeline approach to ASR, in which neural networks---particularly Transformer-based architectures---act as the core component of a speech recognition pipeline, we now examine two representative models that illustrate different paradigms of contemporary Transformer-based ASR:
 wav2vec~2.0 \citep{baevskiWav2vec20Framework2020}, a self-supervised encoder-only model fine-tuned with CTC loss, and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}, a weakly-supervised encoder-decoder model.
 
 \subsection{Motivations}
 
 The motivations behind wav2vec~2.0 and Whisper differ, yet they originate from a shared insight, as both address one of the central challenges for modern neural network--based ASR systems, as discussed in Section~\ref{sec:challenges_in_asr}: the lack of (very) large labeled datasets.
 
+\paragraph{Self-Supervision in Low-Resource Scenarios}
 \citet{baevskiWav2vec20Framework2020} observe that, in principle, this issue should not prevent the development of highly accurate ASR systems---even in low-resource scenarios where only very small labeled datasets exist, which is the case for many of the world's lesser spoken languages.
 They draw this conclusion from the fact that human infants are also able to acquire language understanding without such labeled examples.
 Instead, infants listen to adults around them speaking a language and gradually learn useful representations of speech.
 Further, \citet{baevskiWav2vec20Framework2020} argue that self-supervised learning on unlabeled speech data---often readily available, even in many of the mentioned low-resource scenarios---can provide a similar mechanism for machine learning models, since this self-supervised method has already proven itself effective across many NLP tasks and in other fields of research such as computer vision.
 
+\paragraph{Self-Supervised Encoder-Only Models}
 They propose training an encoder-only model to learn contextualized representations of jointly learnt quantized speech units.
-For downstream tasks such as speech recognition, they add a linear decoder and fine-tune their model on possibly very little labeled data using a Connectionist Temporal Classificiation (CTC) \cite{gravesConnectionistTemporalClassification}.
+For downstream tasks such as speech recognition, they add a small layer onto the encoder and fine-tune this new model on possibly very little labeled data using a Connectionist Temporal Classificiation (CTC) \cite{gravesConnectionistTemporalClassification}.
 
+\paragraph{Disadvantages of Encoder-Only Models}
 By contrast, \citet{radfordRobustSpeechRecognition2023} highlight a general limitation of such self-supervised pre-training approaches: while they are able to train audio encoders providing high-quality representations of speech, they lack an equally strong pre-trained decoder, requiring fine-tuning on labeled data for downstream tasks such as ASR; a complex process introducing the risk of the model adepting to dataset-specific patterns and reducing its ability to generalize well to other datasets.
 Encoder-only models also often benefit from the use of an additional language model together with the fine-tuned decoder.
 
-\citet{radfordRobustSpeechRecognition2023} instead suggest adopting a large-scale weakly-supervised strategy, moving beyond existing gold-standard labeled datasets and pre-training encoder-decoder models on these substantially larger collections of labeled speech data.
+\paragraph{Large-Scale Weak Supervision}
+\citet{radfordRobustSpeechRecognition2023} instead suggest adopting a large-scale weakly-supervised strategy, moving beyond existing gold-standard labeled datasets and pre-training standard encoder-decoder models on these substantially larger collections of labeled speech data.
 This weakly-supervised approach has already been shown to improve robustness and generalization in other domains, such as computer vision.
 For this purpose, they constructed Whisper, an end-to-end ASR model trained on the largest labeled speech dataset of its time, with the goal of achieving robust transcription of multilingual speech in a zero-shot setting, meaning without any fine-tuning.
 
 \subsection{Architectures}
 
-The wav2vec~2.0 model consists of a speech feature encoder building latent speech feature representations directly from the raw input waveform.
-It consists of a stack of 1D convolutional layers each followed by layer normalization \cite{baLayerNormalization2016} and a GELU activation function \cite{hendrycksGaussianErrorLinear2023}.
+After talking about the motivations behind the two models, we will now discuss their architectures.
+
+\paragraph{Speech Feature Extraction}
+The speech feature extraction in wav2vec~2.0 works by building latent speech feature representations directly from the raw input waveform.
+The feature encoder consists of a stack of 1D convolutional layers each followed by layer normalization \cite{baLayerNormalization2016} and a GELU activation function \cite{hendrycksGaussianErrorLinear2023}.
 
 Whisper also uses raw audio waveforms as input, however, it first computes a log mel spectogram of this waveform, normalizes the computed channel values and passes them to a small convolutional feature encoder, similar to the one just described used by \citet{baevskiWav2vec20Framework2020}.
 
+\paragraph{Speech Recognition Model}
 With wav2vec~2.0, the latent speech features computed by the feature encoder are then passed to the so called context network, consisting, for now, only of the encoder part of a Transformer \cite{vaswaniAttentionAllYou2023}.
-This includes multiple blocks of residual connections, self-attention layers, feed-forward networks and layer normalization and serves the purpose of building contextualized representations of speech units, which can later be decoded into a textual transcription by a linear decoder, added to the context network after pre-training.
+This includes multiple blocks of residual connections, self-attention layers, feed-forward networks and layer normalization and serves the purpose of building contextualized representations of speech units, which can later be decoded into a textual transcription by appending an additional classification layer to the context network after pre-training.
 
-The output of Whisper's feature encoder is instead passed to an entire encoder-decoder Transformer \cite{vaswaniAttentionAllYou2023}, using pre-activation residual connections and sharing the same width and number of Transformer blocks between encoder and decoder, which are connected through cross attention.
+The output of Whisper's feature encoder is instead passed to an entire encoder-decoder Transformer \cite{vaswaniAttentionAllYou2023}, using pre-activation residual connections and sharing the same width and number of Transformer blocks between encoder and decoder, which are connected through cross-attention.
 
+\paragraph{Positional Embeddings}
 \citet{baevskiWav2vec20Framework2020} use relative positional embeddings as the positional information used by the encoder.
 They compute these embeddings by adding a convolution of the inputs followed by a GELU activation on to the inputs and then applying layer normalization.
 
@@ -242,21 +261,32 @@ They compute these embeddings by adding a convolution of the inputs followed by 
 
 \subsection{Training}\label{sec:training}
 
-The training process is where wav2vec~2.0 and Whisper differ very much.
+After discussing the architectures used by the two representative models, we will now contrast their respective training processes.
 
-As stated previously, \citet{baevskiWav2vec20Framework2020} employ a self-supervised pre-training approach for wav2vec~2.0, while \citet{radfordRobustSpeechRecognition2023} use a supervised approach.
+\paragraph{Training Paradigms}
+As stated previously, \citet{baevskiWav2vec20Framework2020} employ a self-supervised pre-training approach for wav2vec~2.0, while \citet{radfordRobustSpeechRecognition2023} use a supervised approach for Whisper.
+Additionally, Whisper's training process also includes learning language identification and translation
+The training processes for the two models therefore differ very much.
 
-\paragraph{Pre-Training Dataset}
-The approaches not only differ in paradigm, but also in the data used to pre-train the models.
+\paragraph{Training Datasets}
+Apart from the difference in paradigm, the approaches also differ in their training data.
 For the self-supervised pre-training of wav2vec~2.0, \citet{baevskiWav2vec20Framework2020} use the LibriSpeech corpus \cite{panayotovLibrispeechASRCorpus2015}, containing $\SI{960}{\hour}$ of unlabeled data, as well as the larger LibriVox corpus \cite{kahnLibriLightBenchmarkASR2020}, amounting to $\SI{53.2}{\kilo\hour}$ of audio data.
-Instead of using an existing corpus, \citet{radfordRobustSpeechRecognition2023} curate $\SI{680}{k\hour}$ of labeled audio data from publicly accessible sources on the internet, including multilingual data, amounting to one order of magnitude more labeled data than previous attempts.
 
-% TODO: insert paragraphs here
-During the pre-training of wav2vec~2.0, random time spans in the input audio are chosen and the corresponding speech feature vectors computed by the feature encoder are masked out, similar to the training methods used in other masked language models such as BERT \cite{devlinBERTPretrainingDeep2019}.
+Instead of using an existing corpus, \citet{radfordRobustSpeechRecognition2023} curate $\SI{680}{\kilo\hour}$ of labeled audio data from publicly accessible sources on the internet, consisting of $\SI{438}{\kilo\hour}$ of English speech, $\SI{117}{\kilo\hour}$ of multilingual speech and $\SI{125}{\kilo\hour}$ of multilingual speech with English transcriptions.
+This amounts to one order of magnitude more labeled data than previous approaches.
+
+\paragraph{Data Augmentation}
+Both models employ (a modified version of) SpecAugment \citet{parkSpecAugmentSimpleData2019} to augment labeled training data, with wav2vec~2.0 using it for fine-tuning (Section~\ref{sec:fine-tuning}).
+
+\paragraph{Self-Supervised Pre-Training using Masking}
+The pre-training of wav2vec~2.0 works similar to the training of masked language models such as BERT \cite{devlinBERTPretrainingDeep2019}.
+
+Given an unlabeled speech sample as input, random time spans of the audio are chosen and the corresponding speech feature vectors computed by the feature encoder are masked out.
 Masked out feature vectors are simply replaced by a trained feature vector shared between all masked time steps.
 
 The masked feature vectors are then passed to the context network, producing contextualized representations of speech for each time step.
 
+\paragraph{Quantization and Training Objective}
 A contrastive loss is then calculated for each masked time step:
 A quantization module---only used during pre-training---computes quantized speech representations for each of the masked feature vectors by discretizing each unmasked feature to a finite set of speech representations using product quantization \cite{jegouProductQuantizationNearest2011}, an approximate nearest-neighbor method that maps each feature vector to a combination of learned codebook entries.
 
@@ -267,56 +297,83 @@ The distractor representations for this contrastive task are quantized represent
 Rather than employing an explicit classification loss, the cosine similarity scores between the contextualized representation of the masked time step and each candidate representation are used to calculate the contrastive loss, which is then be used by the optimizer.
 The contrastive training objective encourages the similarity score of the true target to be higher than those of the distractors, thereby pushing the model to align the contextual representations and the discrete speech units.
 
-\citet{baevskiWav2vec20Framework2020} also enable the gradients of the contrastive loss to flow back through the quantization module during optimization by using a hard selection for determining the quantized representations in a forward pass and assuming a probabilistic soft selection in the backwards pass of a pre-training step (Gumbel softmax).
+\paragraph{Jointly Learnt Quantizations}
+\citet{baevskiWav2vec20Framework2020} also enable the gradients of the contrastive loss to flow back through the quantization module during optimization by using a hard selection for determining the quantized representations in a forward pass and assuming a probabilistic soft selection in the backwards pass of the pre-training step (Gumbel softmax).
 As a result, the codebook embeddings used by the quantization module are learned jointly with the rest of the model, allowing the quantized speech units themselves to adapt to the structure of the speech data.
 
 Additionally, \citet{baevskiWav2vec20Framework2020} employ a diversity loss with the purpose of preventing codebook entries from going unused in the quantization module.
 
-Pre-training Whisper is conceptually simpler, since it uses a standard Transformer and sequence-to-sequence cross-entropy loss.
+\paragraph{Multiask Supervised Pre-Training}
+The pre-training process of Whisper for speech recognition is conceptually simpler, as it uses a standard Transformer architecture and sequence-to-sequence cross-entropy loss.
 
-With Whisper, the audio of a transcribed speech sample is first passed through the encoder.
-The decoder then autoregressively predicts the next transcript token given all previously correct tokens and whilst attending to the encoded audio using cross-attention, similar to inference as described in Section~\ref{sec:inference}.
+In addition to generating transcripts, \citet{radfordRobustSpeechRecognition2023} also train Whisper to do voice activity detection and prediction of timestamps along the transcript.
+Furthermore, for multilingual settings, the model is trained to perform language identification and to translate speech into English.
 
-The optimizer then minimizes the cross-entropy loss over the generated token.
-This is done for all expected transcript tokens.
-
-Both models also employ (a modified version of) SpecAugment \citet{parkSpecAugmentSimpleData2019} to augment labeled training data, with wav2vec~2.0 using it during fine-tuning (Section~\ref{sec:fine-tuning}).
+For a given transcribed speech sample, the audio data is first processed by the encoder, which produces a sequence of latent speech representations, similar to those produced by the context network present in wav2vec~2.0.
 
 % TODO; describe whisper's multi-task training: translation, transcription for multiple languages, voice activity detection, speaker diarization, time stamps
 
 % TODO: talk about how alignment is learned
 
+For the multitask training, the decoder can then be given tokens corresponding to each task.
+
+\paragraph{Autoregressive Decoding}
+Assuming the task of transcription, the decoder then predicts the transcript autoregressively, generating one token at a time.
+During training, each prediction of the next transcript token is conditioned on the previously correct tokens, with a small probability of using previously generated tokens instead.
+
+To produce the next token, the decoder applies self-attention over the preceding transcript tokens and later on over the latent feature sequence, as well as cross-attention to the encoded audio features produced by the encoder.
+
+This mechanism closely mirrors the inference procedure, which is described in more detail in Section~\ref{sec:inference}.
+
+\paragraph{Training Objective}
+The optimizer then minimizes the cross-entropy loss over the generated token.
+This is done for all expected transcript tokens.
+
 \subsection{Fine-Tuning}\label{sec:fine-tuning}
 
-Pre-training a wav2vec~2.0 model only teaches it to produce contextualized speech representations rather than actual transcript text.
-To perform downstream speech recognition, a initially randomized linear layer is appended onto the context network of the pre-trained encoder-only model, mapping each contextualized representation to a logit vector.
-This is then followed by a softmax to produce a probability distribution over the output vocabulary, e.g.\ characters or phonemes as well as a special CTC boundary symbol.
-Because the layer is added after pre-training, it necessitates a fine-tuning step for adapting its weights to perform ASR.
+After pre-training a speech recognition model, an additional step of fine-tuning on a testset can be applied.
+
+\paragraph{Adapting Encoder-Only Models for ASR}
+For encoder-only models, such as wav2vec~2.0, a slight modification of the model is required to perform downstream ASR, because pre-training only teaches the model to produce contextualized speech representations rather than actual transcript text.
+
+To enable transcription, a randomly initialized linear projection layer is appended to the context network of the pre-trained encoder-only model.
+This added layer maps each contextualized representation to vector of logits over the output vocabulary, such as characters or phonemes, including a special CTC boundary symbol.
+A softmax operation is then applied to obtain a probability distribution over these tokens.
+
+Because this classification layer is introduced after pre-training, its parameters must be learned later, making fine-tuning non-optional.
 
 % TODO: talk about what labeled data wav2vec 2.0 is fine-tuned on
 
-In contrast, Whisper is already trained on large amounts of labeled speech samples and can perform ASR in zero-shot setting, making fine-tuning optional---one of the research goals of \citet{radfordRobustSpeechRecognition2023}.
+\paragraph{Fine-Tuning of Supervised Models}
+In contrast, supervised models are already trained on large collections of labeled speech data and are therefore capable of performing ASR without additional fine-tuning.
+Nevertheless, fine-tuning remains common practice, particularly when adapting a model to a specific domain or acoustic conditions.
 
+For Whisper specifically, \citet{radfordRobustSpeechRecognition2023} design the model to perform well without task-specific adaptation, aiming for strong zero-shot performance across a wide range of datasets and conditions.
+
+\paragraph{Fine-Tuning using CTC}
 The actual fine-tuning of wav2vec~2.0 performed by \citet{baevskiWav2vec20Framework2020} uses CTC loss \cite{gravesConnectionistTemporalClassification} with some (possibly very little) labeled speech data.
 The learned feature encoder stays fixed and is not trained during this process.
 Latent speech features produced by it are however tampered with during fine-tuning using a method similar to SpecAugment \cite{parkSpecAugmentSimpleData2019}, as previously stated, because this improves generalization and robustness.
 
-Fine-tuning the decoder using CTC loss has the goal of maximizing the probability of the model outputting the correct transcript, when all duplicate output tokens, e.g.\ characters or phonemes, between CTC boundary tokens are collapsed, as this collapse also happens during inference (Section~\ref{sec:inference}).
-Different alignments of the input audio (or the generated speech representations) and the output tokens are therefore explicitly not considered, as they all amount to the same transcript being generated.
+Fine-tuning the decoder using CTC loss has the goal of maximizing the probability of the model outputting the correct transcript, when all duplicate output tokens, e.g.\ characters or phonemes, between CTC boundary tokens are collapsed.
+This collapse is also applied during inference (Section~\ref{sec:inference}).
 
-The CTC loss thus marginalizes over all valid alignments of output tokens---the sequences that collapse to the ground-truth transcript.
+\paragraph{Marginalization over Alignments}
+Because different alignments of the input audio and the output tokens can amount to the same transcript being generated, the CTC loss marginalizes over all valid alignments of output tokens---the sequences of output tokens that collapse to the ground-truth transcript.
 This marginalization is efficiently computed using dynamic programming, summing the probabilities of all such alignments without explicitly enumerating and calculating the probability of each alignment.
 The dynamic programming approach used here takes advantage of the fact that alignments producing the same prefix of the target transcription at the same time step in the input audio share the same accumulated probability up to that point.
 
+\paragraph{Conditional Independence Assumption}
 One of the main issues in training a decoder using CTC loss, as done in wav2vec~2.0, is that CTC relies on a strong conditional independence assumption.
 Every output token $y_i$ in the output sequence $\mathbf{y}=(y_1, \ldots, y_m)$ is assumed to be conditionally independent of every other output token $y_j$ given the input sequence $\mathbf{x}$ of audio speech features:
 \begin{equation*}
   p(\mathbf{y}\mid\mathbf{x}) = \prod_{t=1}^m p(y_t\mid\mathbf{x})
 \end{equation*}
 
-\noindent
+\paragraph{Implicit Language Modeling}
 As a result, the layer added onto a pre-trained wav2vec~2.0 model cannot capture sequential dependencies between output tokens and does therefore not learn an implicit language model, unlike Whisper, which does not make this assumption of conditional independence.
 
+\paragraph{Explicit Language Modeling}
 Not learning an implicit language model can partially be overcome by including an external language model when decoding (Section~\ref{sec:inference}).
 It is even possible for this approach to prove beneficial, for example when transferring between different ASR domains:
 even though the language used in the domains might differ, the acoustics of speech often still remain similar.
@@ -324,37 +381,48 @@ With a decoder trained only using CTC, a new language model can then simply be s
 
 \subsection{Inference}\label{sec:inference}
 
-Both Whisper and wav2vec~2.0 convert the latent representations produced by their respective encoders into output tokens for inference.
+Having discussed the different training paradigms and fine-tuning procedures, we now consider inference.
 
+% say that both models have this basic fact in common:
+Both Whisper and wav2vec~2.0 share the same fundamental principle at inference time:
+the latent representations produced by their respective encoders are ultimately converted into output tokens.
+
+\paragraph{Output Tokens}
 Whisper's decoder generates BPE tokens, necessitating a mapping step to achieve a human readable transcript, while wav2vec~2.0 already generates characters (or phonemes) but still requires the CTC collapse described in Section~\ref{sec:fine-tuning} to generate the final transcript.
 
+\paragraph{Inference under Conditional Independence}
 The biggest difference in inference between wav2vec~2.0 and Whisper is due to the conditional independence assumption made only by the former, but not the latter.
 
-Because \citet{baevskiWav2vec20Framework2020} assume output tokens to only depend on the latent representations generated by the encoder and be independent of each other, inference of an output token for each time step of the input audio can be done in parallel.
+Because \citet{baevskiWav2vec20Framework2020} assume output tokens to only depend on the latent representations generated by the encoder and be independent of each other, inference of an output token for each time step of the input audio can be done in one pass.
 The CTC collapse then only requires a further linear pass over the generated output tokens.
 
+% TODO: add source
+\paragraph{Autoregressive Decoding}
 For Whisper, inference happens autoregressively instead.
-When generating a new output token, the decoder not only attends to the latent representations of the encoder through cross attention, but also to all previously generated output tokens---each using a learned positional encoding---using causal (left-to-right) self-attention.
+When generating a new output token, the decoder not only attends to the latent representations of the encoder through cross-attention, but also to all previously generated output tokens---each using a learned positional encoding---using causal (left-to-right) self-attention.
 This autoregessive property causes inference to be inherently sequential, making it computationally less efficient than the inference for wav2vec~2.0.
 
+\paragraph{Decoding Strategies}
 Because the decoders of both Whisper and wav2vec~2.0 output a probability distribution over the possible output tokens rather than a single concrete token, this distribution must then be converted into an actual prediction via a decoding strategy.
 This can be done, for example, by greedy decoding, which selects the most probable token, or by beam search.
 
+% TODO: add source
+\paragraph{Beam Search}
 Beam search works by keeping the most probable candidate sequences of output tokens in a search beam.
 At each step, every sequence in the beam is extended by all possible next output tokens, the probabilities of the resulting sequences are calculated by accumulating output token probabilities computed by the model, and then only the most probable sequences are retained for the next step.
 
 This decoding strategy incurs additional computational cost compared to greedy decoding, but it also enables the incorporation of an external language model in the decoding process.
 
-This can be achieved by rescoring each candidate sequence in the beam, interpolating the probability assigned by the external language model with the probability computed by the decoder using a certain weighting factor.
-Additionally, since language models tend to prefer shorter sequences, a length normalization term is also included in this rescoring.
+% TODO: add source
+\paragraph{External Language Model Rescoring}
+The inclusion of an external language model can be achieved by rescoring each candidate sequence in the beam, interpolating the probability assigned by the external language model with the probability computed by the decoder using a certain weighting factor.
+Additionally, since language models tend to prefer shorter sequences, a length normalization term is also included in the new score.
 
-% TODO: add references to evaluation of incorporating LLMs for inference
+% TODO: add references to evaluation of incorporating external language models for inference
 Since wav2vec~2.0 does not learn an implicit language model (Section~\ref{sec:fine-tuning}), integrating such an external language model (at least for transcript generation) is particularly beneficial \cite{baevskiWav2vec20Framework2020}.
 For Whisper, the usage of external language models can still improve transcript quality, as its implicit language model is trained on substantially less text data than modern LLMs \cite{jurafskySpeechLanguageProcessing2025}.
 
-% TODO: different tasks: how are they specified in whisper?
-
-\subsection{Evaluation}
+\subsection{Evaluation}\label{sec:evaluation}
 
 After describing the architecture, training, and inference procedures of wav2vec~2.0 and Whisper, we now turn to methods for assessing and comparing the transcription accuracy of such ASR systems.
 
@@ -363,12 +431,18 @@ As with machine learning models in general, ASR performance is typically evaluat
 Evaluation is performed using standardized evaluation metrics to ensure consistency across studies.
 
 \paragraph{Word Error Rate}
-The most widely used metric for ASR is Word Error Rate (WER), which quantifies the difference between the generated transcription and the reference by computing the minimum word-level edit distance between the two sequences, normalized by the total number of words in the reference.
+The most widely used evaluation metric for ASR is the Word Error Rate (WER).
+It quantifies the discrepancy between a generated transcription and a reference transcript by computing the minimum word-level edit distance between the two sequences, normalized by the total number of words in the reference, denoted by $N$.
 
 \paragraph{Edit Distance}
-The minimum edit distance of two sequences is defined as the minimum number of insertions, deletions, and substitutions required to transform one sequence into the other.
+The minimum edit distance of two sequences is defined as the minimum number of substitutions $S$, deletions $D$ and insertions $I$ required to transform one sequence into the other.
 
-It can be efficiently computed via a dynamic programming approach that calculates the minimum edit distance for all pairs of prefixes of the two sequences, building up to the total minimum edit distance by incrementally computing the edit distances between longer prefixes from the previously computed distances.
+This minimum can be efficiently computed via a dynamic programming approach that incrementally determines the edit distance for all prefix pairs of the two sequences.
+
+WER is therefore given by
+\begin{equation*}
+  \text{WER} = \frac{S+D+I}{N}.
+\end{equation*}
 
 \paragraph{Advantages of WER}
 WER is popular in speech processing due to its simplicity while being largely language-agnostic---though for some languages, alternatives such as character-level metrics may be more appropriate.
@@ -385,7 +459,7 @@ WER is also highly sensitive to variations in transcript style, such as punctuat
 To circumvent the latter problem, ASR models are often fine-tuned on a development test set, which contains transcriptions similar in style to those found in the actual test set.
 While fine-tuning on such a development set improves comparability of model performance for each specific test set, measuring the performance of models after fine-tuning them to each test set inherently changes what is being measured by the evaluation.
 
-\paragraph{In-Distribution vs.\ Out-of-Distribution Evaluation and Robustness}
+\paragraph{In-Distribution vs.\ Out-of-Distribution Evaluation}
 Evaluating WER scores of models that are adapted to data sampled from the same distribution as the test set primarily reflects their ability of in-distribution generalization.
 
 \citet{radfordRobustSpeechRecognition2023} argue that this setting differs fundamentally from how human performance is typically evaluated on the same speech recognition tasks, since humans are often given little to no data from the test distribution prior to evaluation.
@@ -400,10 +474,11 @@ To capture the so called overall robustness of an ASR system, \citet{radfordRobu
 Because this overall robustness is directly influenced by a higher base accuracy, they also measure the effective robustness, as introduced by \citet{taoriMeasuringRobustnessNatural2020}, which instead reflects the out-of-distribution performance relative to what would be expected based on in-distribution accuracy.
 A model with high effective robustness exhibits degradation in performance smaller than expected and comes closer to the ideal of equal performance across all datasets.
 
-In practice, \citet{radfordRobustSpeechRecognition2023} use LibriSpeech to serve as an anchor for in-distribution performance, with additional test sets evaluated relative to this baseline.
+\paragraph{LibriSpeech Benchmark}
+In practice, many ASR systems are evaluated on the LibriSpeech benchmark, which \citet{radfordRobustSpeechRecognition2023} therefore use as an anchor for in-distribution performance, with additional test sets evaluated relative to this baseline.
 
 \paragraph{Zero-Shot Evaluation and Text Normalization instead of Fine-Tuning}
-To solve the issue of WER inflating scores because of small stylistic mismatches in transcriptions without needing to rely on fine-tuning to the transcription style of each test set, \citet{radfordRobustSpeechRecognition2023} instead use a zero-shot approach when evaluating and instead apply dataset-specific text normalization (Section~\ref{sec:text_normalization}) before calculating WER to produce semantically more accurate scores, that do not penalize minor differences in transcription style.
+To solve the issue of inflated WER scores because of small stylistic mismatches in transcriptions without needing to rely on fine-tuning to the transcription style of each test set, \citet{radfordRobustSpeechRecognition2023} instead use a zero-shot approach with Whisper when evaluating and instead apply dataset-specific text normalization (Section~\ref{sec:inverse_text_normalization}) before calculating WER to produce semantically more accurate scores, that do not penalize minor differences in transcription style.
 
 This approach, however, has the downside of reducing the direct comparability of WER values across different studies.
 
@@ -411,6 +486,7 @@ This approach, however, has the downside of reducing the direct comparability of
 
 Now that we have discussed the advantages and limitations of WER, as well as the robustness measure used by \citet{radfordRobustSpeechRecognition2023}, we will see how these metrics apply to wav2vec~2.0 and Whisper models and compare the results.
 
+% TODO: continue adding paragraphs here
 With wav2vec~2.0, \citet{baevskiWav2vec20Framework2020} trained two different model configurations: a \textsc{Base} model with 95 million parameters and a \textsc{Large} model with 317 million parameters.
 
 After pre-training such models on either the $\SI{960}{\hour}$ of LibriSpeech audio or the roughly $\SI{60}{\kilo\hour}$ of audio data from LibriVox as described in Section~\ref{sec:training}, \citet{baevskiWav2vec20Framework2020} consider five datasets for fine-tuning each model.
@@ -487,5 +563,16 @@ general trends:
 \end{comment}
 
 \bibliography{zotero}
+
+% removed somehwere
+\begin{comment}
+
+We then examine and compare two representative systems---wav2vec~2.0 \citep{baevskiWav2vec20Framework2020} and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}---discussing architectures, training, inference and evaluation of their performance. % TODO: add further points discussed in this section here.
+
+\subsection{Common Techniques in ASR}
+
+Before examining these specific speech recognition models, it is useful to review techniques commonly used across both the reference and other ASR systems.
+
+\end{comment}
 
 \end{document}
