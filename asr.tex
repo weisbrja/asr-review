@@ -95,41 +95,39 @@ As vocabulary size increases, lexical ambiguity and the likelihood of rare or un
 Code-switching---switching between multiple languages within the same utterance---further increases this complexity.
 
 \paragraph{Acoustic and Speaker Variability}
-Beyond vocabulary size, ASR must account for the fact that the same sentence can be uttered in many acoustically distinct ways.
-Differences in dialect or accent, speaking rate, prosody, and vocal tract characteristics lead to substantial variation in the speech signals produced by different speakers, even when the linguistic content is identical.
-This increases acoustic ambiguity and inherently complicates reliable speech recognition.
+Beyond vocabulary size, ASR must handle substantial acoustic variability:
+identical sentences can be uttered in many different ways due to accent, dialect, speaking rate or prosody.
 
-Accents and dialects---especially those associated with lesser-spoken languages---pose a significant challenge for ASR systems.
-Many such varieties lack large, labeled speech corpora and are consequently underrepresented during training.
+Furthermore, spoken language often contains disfluencies---fragmented, repeated or truncated words (e.g., \enquote{main- mainly}) and filled pauses (e.g., \enquote{uh}, \enquote{uhm})---which deviate from canonical word forms and increase transcription uncertainty.
+
+\paragraph{Low-Resource Scenarios}
+Accents and dialects of lesser-spoken languages pose particular challenges for ASR systems due to limited labeled speech data and underrepresentation in speech corpora.
 This imbalance often leads to substantially higher error rates for affected speaker groups \cite{jurafskySpeechLanguageProcessing2025}.
 Developing robust ASR therefore requires models that generalize effectively under data scarcity, a persistent challenge in speech modeling \cite{baevskiWav2vec20Framework2020}.
 
-Apart from variability in acoustics across speakers, spoken language frequently contains disfluencies, such as fragmented, repeated or truncated words (e.g., \enquote{main- mainly}), as well as filled pauses (e.g., \enquote{uhm}, \enquote{uh}).
-These speech specific phenomena deviate from canonical word forms and introduce additional uncertainty when transcribing.
+\paragraph{Audio Quality and Recording Conditions}
 
-\paragraph{Audio Quality and Recording Environment}
+A further dimension of complexity arises from the recording conditions.
+Speech captured in a quiet studio with a high-quality microphone placed close to the speaker is far easier to transcribe than audio recorded in noisy, everyday environments such as busy streets, restaurants or echoing rooms.
 
-A further dimension of complexity arises from the recording conditions under which speech is captured.
-Audio recorded in a quiet studio environment with a high-quality microphone placed close to the speaker is substantially easier to transcribe than speech recorded in noisy, everyday settings such as busy streets, restaurants or echoing rooms.
+Background noise and competing speakers can mask and distort the speech signal, while reverberation blurs sounds over time, reducing phonetic distinctiveness.
+Audio compression or transmission artifacts can further degrade the audio signal.
 
-Background noise and competing speakers can mask and distort parts of the already complex speech signal.
-Reverberation in enclosed spaces can blur sounds over time, making it harder to distinguish individual words or phonemes.
-The quality and placement of the recording microphone, as well as compression or transmission artifacts, can further distort the signal.
-
-All of these factors make speech recognition under real-world conditions significantly more difficult.
+Together, these factors substantially increase ASR difficulty in real-world settings.
 
 \section{Approaches to ASR}
 
-Historically, a wide range of approaches have been developed and applied to the ASR task.
+Having detailled the core challenges, we now turn to methodological approaches to ASR.
+Over time, a broad spectrum of paradigms has been developed to address the ASR task.
 
 \paragraph{ASR Pipeline}
-Speech recognition systems typically consist of multiple components, arranged in a pipeline built around a core speech recognition model.
-These components can include audio format conversion, feature extraction, subsampling, voice activity detection and inverse text normalization \cite{radfordRobustSpeechRecognition2023}.
+Traditional ASR systems are organized as pipelines consisting of multiple components, centered around a core speech recognition model.
+Typical components include audio format conversion, feature extraction, subsampling, voice activity detection and inverse text normalization \cite{radfordRobustSpeechRecognition2023}.
 
 \paragraph{End-to-End ASR Systems}
 More recent end-to-end ASR systems, such as Whisper \cite{radfordRobustSpeechRecognition2023}, combine many of the traditional pipeline steps into a single model, instead of splitting them into clearly separated components \cite{prabhavalkarEndtoEndSpeechRecognition2023}.
 
-However, many of the ideas described below are still somehow used within these systems.
+However, many of the ideas described below are still used within these systems.
 
 In this section, we will therefore provide an overview of the classic ASR pipeline and its three main components: speech feature extraction, the speech recognition model and inverse text normalization.
 When discussing the speech recognition model itself, we focus on the use of neural network--based architectures, and in particular the recent dominance of Transformer-based models.
