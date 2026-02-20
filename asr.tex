@@ -9,10 +9,11 @@
 \usepackage{latexsym}
 
 \usepackage[english]{babel}
-% TODO: is this correct and how to achieve similar thing for wav2vec 2.0?
 \hyphenation{OpenAI}
 \hyphenation{LibriSpeech}
 \hyphenation{LibriVox}
+
+\usepackage{microtype}
 
 \usepackage{siunitx}
 \usepackage{mathptmx}
@@ -62,22 +63,24 @@
 
 \maketitle
 
-% TODO: write abstract
 \begin{abstract}
-Abstract goes here.
+  Automatic speech recognition (ASR) transcribes spoken language into text, a task complicated by large vocabularies and variability in speech and recording conditions.
+  This survey reviews the classical ASR pipeline and the shift toward attention-based models, and provides a comparative analysis of wav2vec~2.0 and Whisper as representative approaches to self-supervised representation learning and large-scale weakly supervised multilingual and multitask training.
+  We examine standard evaluation methodology, focusing on Word Error Rate (WER) and robustness.
+  Reported results for wav2vec~2.0 facilitate the possibility of low-resource ASR, while Whisper approaches human-level robustness, underscoring the benefits of training at scale as well as multilingual and multitask learning.
+  We finish with open questions regarding robustness and future directions in representation learning.
 \end{abstract}
 
 \section{Introduction}
-
 Automatic Speech Recognition (ASR) is the task of transcribing spoken language into writing---one of the earliest goals of computer language processing \cite{jurafskySpeechLanguageProcessing2025}---and represents a subfield within natural language processing (NLP).
-Today, automatic transcription is used ubiquitously not only in fields like law, where dictation is essential, but also in voice-controlled assistants as well as automatic captioning for movies, videos, conferences or voice messages.
+Today, automatic transcription is used ubiquitously not only in fields like law, where dictation is essential, but also in voice-controlled assistants and as automatic captioning for movies, videos, conferences or voice messages.
 Advances in ASR not only enhance accessibility for individuals with typing or hearing impairments, but also generally provide a more natural interface for interacting with modern machines.
 Despite the progress, accurate automatic transcription of speech by \emph{any speaker} in \emph{any environment} in an \emph{open vocabulary} setting still remains a challenging problem that is far from solved.
 
 In this review, we begin by introducing the ASR task and outlining the challenges involved in producing accurate transcriptions of speech.
-We then examine how ASR systems process speech, covering common techniques and the architectures underlying modern ASR models.
+We then examine how ASR systems typically process speech, covering the classical ASR pipeline and the shift toward attention-based speech recognition models.
 Next, we focus on two representative ASR systems, describing and comparing their architectures, training procedures and inference processes, before discussing evaluation and their performance.
-We conclude by summarizing the insights into modern computer-based speech recognition provided by these models, as well as outlining remaining open questions and ongoing challenges in the field of ASR.
+We conclude by summarizing the insights into modern computer-based speech recognition provided by these models, as well as outlining remaining open questions.
 
 \section{Challenges in ASR}\label{sec:challenges_in_asr}
 
@@ -86,9 +89,9 @@ The complexity of the ASR task can be factored along multiple dimensions that ea
 \paragraph{Vocabulary Size}
 One of the main challenges in ASR is the potentially very large vocabulary that needs to be recognized and accurately transcribed.
 
-While some low vocabulary tasks such as digit recognition or detecting \enquote{yes} versus \enquote{no} answers have been effectively solved for some time, transcribing unconstrained speech with a large general vocabulary---such as in videos or conversations---remains considerably more difficult \cite{jurafskySpeechLanguageProcessing2025}.
+While some low vocabulary tasks such as digit recognition or detecting \enquote{yes} versus \enquote{no} answers have been effectively solved for some time, transcribing unconstrained speech with a large general vocabulary remains considerably more difficult \cite{jurafskySpeechLanguageProcessing2025}.
 
-As vocabulary size grows, so do lexical ambiguity and the likelihood of rare or even unseen words, especially in a multilingual context or in the presence of domain-specific language, such as medical, legal or technical terminology.
+As vocabulary size increases, lexical ambiguity and the likelihood of rare or unseen words also grow, especially in multilingual or domain-specific settings (e.g., medical, legal or technical terminology).
 Code-switching---switching between multiple languages within the same utterance---further increases this complexity.
 
 \paragraph{Acoustic and Speaker Variability}
@@ -96,18 +99,18 @@ Beyond vocabulary size, ASR must account for the fact that the same sentence can
 Differences in dialect or accent, speaking rate, prosody, and vocal tract characteristics lead to substantial variation in the speech signals produced by different speakers, even when the linguistic content is identical.
 This increases acoustic ambiguity and inherently complicates reliable speech recognition.
 
-Accents and dialects---especially those associated with lesser spoken languages---pose a major challenge for ASR systems.
-For many of these local varieties, large labeled speech corpora simply do not exist.
-These accents and dialects are therefore often severely underrepresented during training, which can lead to models struggling to recognize them reliably, resulting in significantly higher error rates for affected speaker groups \cite{jurafskySpeechLanguageProcessing2025}.
-Robust ASR therefore requires models that work well even in low-resource scenarios, which is quite a challenge \cite{baevskiWav2vec20Framework2020}. % this sounds weird
+Accents and dialects---especially those associated with lesser-spoken languages---pose a significant challenge for ASR systems.
+Many such varieties lack large, labeled speech corpora and are consequently underrepresented during training.
+This imbalance often leads to substantially higher error rates for affected speaker groups \cite{jurafskySpeechLanguageProcessing2025}.
+Developing robust ASR therefore requires models that generalize effectively under data scarcity, a persistent challenge in speech modeling \cite{baevskiWav2vec20Framework2020}.
 
-Apart from variability in acoustics across speakers, spoken language frequently contains disfluencies, such as fragmented, repeated or truncated words (e.g. \enquote{main- mainly}), as well as filled pauses (e.g. \enquote{uhm}, \enquote{uh}).
+Apart from variability in acoustics across speakers, spoken language frequently contains disfluencies, such as fragmented, repeated or truncated words (e.g., \enquote{main- mainly}), as well as filled pauses (e.g., \enquote{uhm}, \enquote{uh}).
 These speech specific phenomena deviate from canonical word forms and introduce additional uncertainty when transcribing.
 
 \paragraph{Audio Quality and Recording Environment}
 
 A further dimension of complexity arises from the recording conditions under which speech is captured.
-Audio recorded in a quiet studio environment with a high quality microphone placed close to the speaker is substantially easier to transcribe than speech recorded in noisy, everyday settings such as busy streets, restaurants or echoing rooms.
+Audio recorded in a quiet studio environment with a high-quality microphone placed close to the speaker is substantially easier to transcribe than speech recorded in noisy, everyday settings such as busy streets, restaurants or echoing rooms.
 
 Background noise and competing speakers can mask and distort parts of the already complex speech signal.
 Reverberation in enclosed spaces can blur sounds over time, making it harder to distinguish individual words or phonemes.
@@ -140,7 +143,7 @@ The most basic representation of audio data, used for example by wav2vec~2.0, is
 This format represents audio data simply by the amplitude of the recorded sound waves at each time frame.
 These amplitudes are digitized by sampling them at a certain sampling frequency and quantizing them to a certain bit depth.
 
-Since speech recognition systems typically require their audio input to have a fixed sampling frequency (e.g.\ $\SI{16}{\kilo\hertz}$ for wav2vec 2.0 \cite{baevskiWav2vec20Framework2020} and Whisper \cite{radfordRobustSpeechRecognition2023}) and a fixed bit depth, recorded audio data often needs to be resampled and requantized before it can be processed.
+Since speech recognition systems typically require their audio input to have a fixed sampling frequency (e.g., $\SI{16}{\kilo\hertz}$ for wav2vec 2.0 and Whisper) and a fixed bit depth, recorded audio data often needs to be resampled and requantized before it can be processed \cite{jurafskySpeechLanguageProcessing2025}.
 
 \paragraph{Log Mel Spectrum}
 Other ASR models, such as Whisper \citep{radfordRobustSpeechRecognition2023}, operate on a different audio representation and therefore require an additional preprocessing step.
@@ -197,32 +200,32 @@ This has since made it a prevalent building block in many state-of-the-art ASR s
 
 \subsection{Inverse Text Normalization}\label{sec:inverse_text_normalization}
 
-After discussing how the speech recognition model transforms speech features into output tokens resulting in a transcription of the input audio, we will talk about a post-processing step often applied to the generated transcriptions as a last part of the ASR pipeline.
+After describing how the speech recognition model maps speech features to output tokens, we discuss a post-processing stage typically applied at the end of the ASR pipeline.
 
 \paragraph{Text Normalization}
-Historically, ASR systems were often trained to produce normalized transcriptions, stripped of any punctuation and entirely upper or lower case, using standardized spelling and with dates, numbers and symbols turned into a standardized form, e.g.\ \enquote{25} into \enquote{twenty-five} or \enquote{\$6} into \enquote{six dollars}.
+Historically, ASR systems were often trained to produce normalized transcriptions, removing punctuation, enforcing uniform casing, standardizing spelling, and verbalizing dates, numbers, and symbols (e.g., \enquote{twenty-five dollars} instead of \enquote{\$25}).
 
 \paragraph{Inverse Text Normalization}
-To actually produce naturalistic transcripts, these systems therefore often implemented an inverse mapping of the standardized transcriptions back to conventional written text, possibly applying a specific locale in the process.
+To produce naturalistic transcripts, these systems then often implemented an inverse mapping from the standardized transcriptions back to conventional written text, possibly applying a specific locale in the process.
 This step is often accordingly called inverse text normalization.
 
 \paragraph{End-to-End ASR Models}
-Newer end-to-end spech recognition systems, such as Whisper \cite{radfordRobustSpeechRecognition2023}, directly learn the mapping between utterances and their textual transcripts, eliminating the need for explicit inverse text normalization, thereby simplifying the speech recognition pipeline.
+Newer end-to-end spech recognition systems, such as Whisper \cite{radfordRobustSpeechRecognition2023}, instead directly learn the mapping between utterances and their textual transcripts, eliminating the need for explicit inverse text normalization, thereby simplifying the ASR pipeline.
 
 \section{Comparison of ASR models}\label{sec:comparison_of_models}
 
-Having outlined the classic pipeline approach to ASR, in which neural networks---particularly Transformer-based architectures---act as the core component of a speech recognition pipeline, we now examine two representative models that illustrate different paradigms of contemporary Transformer-based ASR:
-wav2vec~2.0 \citep{baevskiWav2vec20Framework2020}, a self-supervised encoder-only model fine-tuned with CTC loss, and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}, a weakly-supervised encoder-decoder model.
+Having outlined the classical ASR pipeline, where neural networks---particularly Transformer-based architectures---serve as the core component, we now examine two representative models that reflect distinct paradigms of contemporary Transformer-based ASR:
+wav2vec~2.0 \citep{baevskiWav2vec20Framework2020}, a self-supervised encoder-only model fine-tuned with CTC, and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}, a weakly-supervised encoder-decoder model.
 
 \subsection{Motivations}
 
-The motivations behind wav2vec~2.0 and Whisper differ, yet they originate from a shared insight, as both address one of the central challenges for modern neural network--based ASR systems, as discussed in Section~\ref{sec:challenges_in_asr}: the lack of (very) large labeled datasets.
+The motivations behind wav2vec~2.0 and Whisper differ, but both address a central challenge of neural network--based ASR:
+the scarcity of large labeled datasets (Section~\ref{sec:challenges_in_asr}).
 
-\paragraph{Self-Supervision in Low-Resource Scenarios}
-\citet{baevskiWav2vec20Framework2020} observe that, in principle, this issue should not prevent the development of highly accurate ASR systems---even in low-resource scenarios where only very small labeled datasets exist, which is the case for many of the world's lesser spoken languages.
-They draw this conclusion from the fact that human infants are also able to acquire language understanding without such labeled examples.
-Instead, infants listen to adults around them speaking a language and gradually learn useful representations of speech.
-Further, \citet{baevskiWav2vec20Framework2020} argue that self-supervised learning on unlabeled speech data---often readily available, even in many of the mentioned low-resource scenarios---can provide a similar mechanism for machine learning models, since this self-supervised method has already proven itself effective across many NLP tasks and in other fields of research such as computer vision.
+\paragraph{Self-Supervision for Low-Resource Scenarios}
+\citet{baevskiWav2vec20Framework2020} argue that limited labeled data should not fundamentally constrain ASR accuracy.
+Drawing an analogy to human language acquisition, they observe that infants learn from exposure to unlabeled speech, gradually forming useful representations without explicit supervision.
+Accordingly, \citet{baevskiWav2vec20Framework2020} propose leveraging self-supervised learning on unlabeled speech data---often readily available even in low-resource scenarios common to lesser-spoken languages with very limited transcribed speech---as an effective training paradigm for ASR, building on its success across other NLP tasks, as well as computer vision.
 
 \paragraph{Self-Supervised Encoder-Only Models}
 They propose training an encoder-only model to learn contextualized representations of jointly learnt quantized speech units.
@@ -388,7 +391,7 @@ Both Whisper and wav2vec~2.0 share the same fundamental principle at inference t
 the latent representations produced by their respective encoders are ultimately converted into output tokens.
 
 \paragraph{Output Tokens}
-Whisper's decoder generates BPE tokens, necessitating a mapping step to achieve a human readable transcript, while wav2vec~2.0 already generates characters (or phonemes) but still requires the CTC collapse described in Section~\ref{sec:fine-tuning} to generate the final transcript.
+Whisper's decoder generates BPE tokens \cite{sennrichNeuralMachineTranslation2016, radfordLanguageModelsAre2019}, necessitating a mapping step to achieve a human readable transcript, while wav2vec~2.0 already generates characters (or phonemes) but still requires the CTC collapse described in Section~\ref{sec:fine-tuning} to generate the final transcript.
 
 \paragraph{Inference under Conditional Independence}
 The biggest difference in inference between wav2vec~2.0 and Whisper is due to the conditional independence assumption made only by the former, but not the latter.
@@ -424,11 +427,10 @@ For Whisper, the usage of external language models can still improve transcript 
 
 \subsection{Evaluation}\label{sec:evaluation}
 
-After describing the architecture, training, and inference procedures of wav2vec~2.0 and Whisper, we now turn to methods for assessing and comparing the transcription accuracy of such ASR systems.
+After describing the architecture, training, and inference procedures of wav2vec~2.0 and Whisper, we now turn to methods for assessing and comparing the transcription accuracy of ASR systems.
 
 \paragraph{Test Dataset}
-As with machine learning models in general, ASR performance is typically evaluated on a held-out test set, normally drawn from the same distribution as the training data (e.g.\ LibriSpeech test-clean/test-other \cite{panayotovLibrispeechASRCorpus2015} for wav2vec~2.0).
-Evaluation is performed using standardized evaluation metrics to ensure consistency across studies.
+Typically, ASR performance is evaluated on a held-out test set, drawn from the same distribution as the training data, using standardized evaluation metrics to ensure consistency across studies.
 
 \paragraph{Word Error Rate}
 The most widely used evaluation metric for ASR is the Word Error Rate (WER).
@@ -446,7 +448,7 @@ WER is therefore given by
 
 \paragraph{Advantages of WER}
 WER is popular in speech processing due to its simplicity while being largely language-agnostic---though for some languages, alternatives such as character-level metrics may be more appropriate.
-Its straightforward computation ensures consistency and reproducibility of WER scores across studies, providing a clear and easily interpretable measure of transcription accuracy, where lower values indicate fewer transcription errors.
+Its straightforward computation ensures consistency and reproducibility across studies, providing a clear and easily interpretable measure of transcription accuracy, with lower values indicating fewer errors.
 
 \paragraph{Limitations of WER}
 Despite its usefulness, WER has several notable limitations.
@@ -457,122 +459,93 @@ WER is also highly sensitive to variations in transcript style, such as punctuat
 
 \paragraph{Fine-Tuning before Evaluation}
 To circumvent the latter problem, ASR models are often fine-tuned on a development test set, which contains transcriptions similar in style to those found in the actual test set.
-While fine-tuning on such a development set improves comparability of model performance for each specific test set, measuring the performance of models after fine-tuning them to each test set inherently changes what is being measured by the evaluation.
+While fine-tuning on such a development set improves comparability of model performance for each specific test set, measuring the performance of models after adapting them to the transcription style of each test set inherently changes what is being measured by the evaluation.
 
-\paragraph{In-Distribution vs.\ Out-of-Distribution Evaluation}
-Evaluating WER scores of models that are adapted to data sampled from the same distribution as the test set primarily reflects their ability of in-distribution generalization.
+\paragraph{In- vs.\ Out-of-Distribution Evaluation}
+This is because evaluating the WER of models that are fine-tuned to data sampled from the same distribution as the test set primarily reflects their ability of in-distribution generalization.
 
 \citet{radfordRobustSpeechRecognition2023} argue that this setting differs fundamentally from how human performance is typically evaluated on the same speech recognition tasks, since humans are often given little to no data from the test distribution prior to evaluation.
 Their performance is instead assessed in many different settings without prior fine-tuning.
 This measures their out-of-distribution generalization, meaning their ability to maintain a low WER across different testing conditions, which in the context of ASR systems is commonly referred to as robustness.
 
-When evaluating ASR systems that match or even outperform humans on individual benchmarks in a similar manner across different test sets, \citet{radfordRobustSpeechRecognition2023} observed large drops in performance, highlighting a lack of robustness when comparing to humans.
+When evaluating ASR systems that match or even outperform humans on individual benchmarks in a similar manner across different test sets, \citet{radfordRobustSpeechRecognition2023} observed large drops in model performance, highlighting a lack of robustness.
 
 \paragraph{Evaluating Robustness}
 To capture the so called overall robustness of an ASR system, \citet{radfordRobustSpeechRecognition2023} measure the average WER of models across a suite of heterogeneous test sets.
 
-Because this overall robustness is directly influenced by a higher base accuracy, they also measure the effective robustness, as introduced by \citet{taoriMeasuringRobustnessNatural2020}, which instead reflects the out-of-distribution performance relative to what would be expected based on in-distribution accuracy.
+Because this overall robustness is directly influenced by a higher base accuracy, they also measure effective robustness, as introduced by \citet{taoriMeasuringRobustnessNatural2020}, which instead reflects out-of-distribution performance relative to what would be expected based on in-distribution accuracy.
 A model with high effective robustness exhibits degradation in performance smaller than expected and comes closer to the ideal of equal performance across all datasets.
 
 \paragraph{LibriSpeech Benchmark}
-In practice, many ASR systems are evaluated on the LibriSpeech benchmark, which \citet{radfordRobustSpeechRecognition2023} therefore use as an anchor for in-distribution performance, with additional test sets evaluated relative to this baseline.
+In practice, many ASR systems are evaluated on the LibriSpeech benchmark \cite{panayotovLibrispeechASRCorpus2015}, which \citet{radfordRobustSpeechRecognition2023} therefore use as an anchor for in-distribution performance, with performance on additional test sets evaluated relative to this baseline.
 
-\paragraph{Zero-Shot Evaluation and Text Normalization instead of Fine-Tuning}
-To solve the issue of inflated WER scores because of small stylistic mismatches in transcriptions without needing to rely on fine-tuning to the transcription style of each test set, \citet{radfordRobustSpeechRecognition2023} instead use a zero-shot approach with Whisper when evaluating and instead apply dataset-specific text normalization (Section~\ref{sec:inverse_text_normalization}) before calculating WER to produce semantically more accurate scores, that do not penalize minor differences in transcription style.
+\paragraph{Zero-Shot Evaluation and Text Normalization}
+To solve the issue of an inflated WER because of small stylistic mismatches in transcriptions without relying on fine-tuning, \citet{radfordRobustSpeechRecognition2023} use a zero-shot approach and instead apply dataset-specific text normalization (Section~\ref{sec:inverse_text_normalization}) before calculating WER.
+This produces semantically more accurate scores at the cost of reducing the direct comparability of WER accross different studies.
 
-This approach, however, has the downside of reducing the direct comparability of WER values across different studies.
+\subsection{Results}
 
-\subsubsection{Performance on LibriSpeech and other Benchmarks}
+Now that we have discussed how ASR systems can be evaluated in general, as well as discussing the advantages and limitations of WER, and the robustness measure used by \citet{radfordRobustSpeechRecognition2023}, we will see how these metrics apply to wav2vec~2.0 and Whisper models and compare the results.
 
-Now that we have discussed the advantages and limitations of WER, as well as the robustness measure used by \citet{radfordRobustSpeechRecognition2023}, we will see how these metrics apply to wav2vec~2.0 and Whisper models and compare the results.
+\paragraph{Model Configurations}
+As is common in contemporary machine learning research, both wav2vec~2.0 and Whisper are evaluated using multiple model configurations.
 
-% TODO: continue adding paragraphs here
-With wav2vec~2.0, \citet{baevskiWav2vec20Framework2020} trained two different model configurations: a \textsc{Base} model with 95 million parameters and a \textsc{Large} model with 317 million parameters.
+\citet{baevskiWav2vec20Framework2020} trained both a \textsc{Base} model of wav2vec~2.0 with 95 million parameters and a \textsc{Large} model with 317 million parameters.
 
-After pre-training such models on either the $\SI{960}{\hour}$ of LibriSpeech audio or the roughly $\SI{60}{\kilo\hour}$ of audio data from LibriVox as described in Section~\ref{sec:training}, \citet{baevskiWav2vec20Framework2020} consider five datasets for fine-tuning each model.
+After pre-training these models on either the $\SI{960}{\hour}$ of LibriSpeech audio or the roughly $\SI{60}{\kilo\hour}$ of audio data from LibriVox as described in Section~\ref{sec:training}, \citet{baevskiWav2vec20Framework2020} then consider five datasets for fine-tuning each model.
 
 They simulate low-resource labeled data scenarios using test sets from Libri-light \cite{kahnLibriLightBenchmarkASR2020}, with labeled data ranging from as little as $\SI{10}{\minute}$, $\SI{1}{\hour}$ and $\SI{10}{\hour}$ up to $\SI{100}{\hour}$, as well as fine-tuning on the full LibriSpeech corpus ($\SI{960}{\hour}$ of labeled data).
 
 They also investigate the usage of external language models (Section~\ref{sec:fine-tuning}) by pairing each fine-tuned model with some combination of no language model, a 4-gram language model or a Transformer-based language model, with both language models being trained on the LibriSpeech text corpus.
 
-They find that the \textsc{Large} model trained on the $\SI{60}{\kilo\hour}$ of unlabeled audio data from LibriVox paired with the Transformer-based language model only needs fine-tuning on $\SI{10}{\minute}$ of labeled data to achieve WER of $5.2/8.6$ on LibriSpeech's test-clean/test-other test sets, with the former containing primarily high-quality, low-noise recordings with clear pronunciation, while the latter includes more challenging conditions such as background noise, reverberation and accented speech, which make speech recognition substantially more difficult.
+In contrast, \citet{radfordRobustSpeechRecognition2023} evaluate Whisper across a spectrum of model scales, ranging from 39 million parameters (\textsc{Tiny}) through \textsc{Base}, \textsc{Small}, and \textsc{Medium}, up to the \textsc{Large} configuration with roughly 1.55 billion parameters, each trained on the full weakly supervised corpus of $\SI{680}{\kilo\hour}$ of multilingual and multitask speech samples.
 
-These results represent both an impressive feat in speech processing using self-supervised learning, massively improving on previous work and further, they showed that effective speech recognition is even possible in ultra-low resource scenarios, possibly enabling speech recognition for many lesser spoken languages or dialects.
+\paragraph{Self-Supervision for Low-Resource Scenarios}
+\citet{baevskiWav2vec20Framework2020} find that the \textsc{Large} configuration of wav2vec~2.0 trained on the full $\SI{60}{\kilo\hour}$ of unlabeled audio data from LibriVox paired with the Transformer-based language model only needs fine-tuning on $\SI{10}{\minute}$ of labeled data to achieve a WER of $5.2/8.6$ on LibriSpeech's clean/other test sets, with the former containing primarily high-quality, low-noise recordings with clear pronunciation, while the latter includes more challenging conditions such as background noise, reverberation and accented speech, which make speech recognition substantially more difficult (Section~\ref{sec:challenges_in_asr}).
 
-Increasing the amount of unlabeled audio data ($\SI{960}{\hour}$ vs. $\SI{60}{\kilo\hour}$) shows large improvements in performance, demonstrating that self-supervised speech recognition can be significantly improved by training on more unlabeled data.
+These results significantly improve on previous self-supervised methods and show that accurate ASR is achievable even in ultra-low-resource settings, potentially benefiting many lesser-spoken languages and dialects.
 
-Increasing model size from \textsc{Base} to \textsc{Large} also improves WER in all tested scenarios.
+\paragraph{Scaling Laws for Self-Supervision}
+Comparing performance across model configurations, \citet{baevskiWav2vec20Framework2020} find that increasing the amount of unlabeled audio data ($\SI{960}{\hour}$ vs. $\SI{60}{\kilo\hour}$) results in large improvements in performance, demonstrating a general scaling law for self-supervised approaches.
 
-In a high-resource labeled data scenario, wav2vec~2.0 also proves effective, as the method's best WER of $1.8/3.3$ is achieved by the \textsc{Large} model pre-trained on the full LibriVox corpus ($\SI{60}{\kilo\hour}$ of unlabeled audio) and fine-tuned on the most amount of labeled data (the full $\SI{960}{\hour}$ from the LibriSpeech corpus) when paired with the Transformer-based language model.
-This demonstrates that self-supervised learning for speech recognition is not only applicable in low-resource scenarios, rather it also compares well against supervised methods in high-resource scenarios.
+Increasing the model size from \textsc{Base} to \textsc{Large} also improves the WER in all tested scenarios.
+
+\paragraph{Self-Supervision for High-Resource Scenarios}
+wav2vec~2.0 also proves effective for high-resource scenarios, as the \textsc{Large} model pre-trained on the full LibriVox corpus ($\SI{60}{\kilo\hour}$ of unlabeled audio) and fine-tuned on the full $\SI{960}{\hour}$ of labeled audio from the LibriSpeech corpus achieves a WER of $1.8/3.3$ when paired with the Transformer-based language model.
+This highlights the value of high-quality speech representations and demonstrates the competitiveness of self-supervised learning, even when substantial labeled data is available.
 
 \paragraph{Distribution Shift and Robustness}
-\citet{radfordRobustSpeechRecognition2023} showed however, that even though wav2vec~2.0 models perform well on LibriSpeech after being fine-tuned, applying them to different data distributions by directly transferring to other test sets leads to a significant increase in WER, therefore demonstrating low effective robustness under distribution shift.
+With respect to robustness, \citet{radfordRobustSpeechRecognition2023} showed that even though wav2vec~2.0 models perform well on LibriSpeech, applying them to different data distributions by directly transferring fine-tuned models to other test sets leads to a significant increase in WER, therefore demonstrating low effective robustness under distribution shift.
 
-With Whisper, even though the best zero-shot Whisper model achieves a significantly higher WER of $2.5/5.2$ on LibriSpeech, a very different robustness across different test sets is achieved, with WER values reduced by $55.2\%$ on average per test set when compared to the WER of a wav2vec~2.0 model that performs within $0.1\%$ on LibriSpeech.
+With Whisper, even though the best zero-shot Whisper model achieves a significantly higher WER of $2.5/5.2$ on LibriSpeech, a very different robustness across different test sets is achieved, with a reduction in WER by $55.2\%$ on average per test set compared to the WER of a wav2vec~2.0 model that performs within $0.1\%$ on LibriSpeech.
 
-\citet{radfordRobustSpeechRecognition2023} find that training on the full $\SI{680}{\kilo\hour}$ of semi-labeled audio data collected by them leads to the most robust and best performing Whisper model, with more data strongly correlating to a better perfomance, a common conclusion drawn by both Whisper and wav2vec~2.0.
+\paragraph{Robustness at Scale}
+\citet{radfordRobustSpeechRecognition2023} find that training on the full $\SI{680}{\kilo\hour}$ of semi-labeled audio data they collected yields the most robust and best-performing Whisper model, with increases in the amount of training data strongly correlating with improved performance and robustness.
+This observation aligns with the positive scaling behavior reported by \citet{baevskiWav2vec20Framework2020}.
 
-They, however, start to observe diminishing returns when increasing dataset size, which they explain by saturation effects when approaching human-level performance.
+However, \citet{radfordRobustSpeechRecognition2023} begin to observe diminishing returns when increasing dataset size, which they attribute to saturation effects as performance approaches human-level accuracy.
 
-When increasing model size, they also observe an increase in performance, similar to \cite{baevskiWav2vec20Framework2020}.
-For English speech recognition, however, they note diminishing returns similarly explained by approaching human-level performance.
-
-\subsection{Conclusions}
+Scaling model capacity yields further performance gains, consistent with the trends reported by \citet{baevskiWav2vec20Framework2020}.
+For English speech recognition in particular, \citet{radfordRobustSpeechRecognition2023} again observe diminishing returns, which they similarly explain as a consequence of nearing human-level performance.
 
 \paragraph{Multitask and Multilingual Speech Recognition}
-\citet{radfordRobustSpeechRecognition2023} conclude that even though training a single model to perform multiple tasks such as speech recognition, translation into English, producing timestamps for alignment as well as doing language identification, all while being multilingual, might seem contraproductive (better word here pls) because of interference between tasks and languages, resulting in a worse overall performance, but this is not the case, at least for large models trained on a huge dataset.
-To the contrary, \citet{radfordRobustSpeechRecognition2023} find that, at a large scale, such multitask and multilingual joint models scale better and outperform similar models trained on English-only data.
+Further, \citet{radfordRobustSpeechRecognition2023} note that although jointly training a single model to perform multiple tasks across many languages might seem counterproductive because of interference in learning, at sufficient scale these effects do not dominate.
+Instead, they find multitask and multilingual Whisper configurations to scale better and even outperform similar configurations trained on English-only data.
 
-In total, they conclude that supervised learning on extremely large semi-supervised datasets has been underappreciated in ASR, and may provide a way forward towards more robustness and even better (multilingual) speech recognition.
-% TODO: Whisper as an end-to-end system, rather than needing a custom pipeline with different components -> represents larger trend in ASR
+\section{Conclusion}
 
-\citet{baevskiWav2vec20Framework2020} conclude that pre-training speech recognition models on unlabeled data shows large potential, especially for ultra--low resource scenarios with very little labeled speech data available.
-This could improve the availability of speech recognition systems for many lesser spoken languages as well as dialects, as this still remains a challenge in ASR (Section \ref{sec:challenges_in_asr}).
-They conclude that self-supervised approaches also benefit from even more unlabeled data.
+This survey has explored contemporary ASR by outlining its central challenges and comparing wav2vec~2.0 and Whisper as representative models of two influential paradigms: self-supervised representation learning and large-scale supervised training.
 
-Whisper and wav2vec~2.0 thus need to be viewed as complementary approaches, rather than competing solutions.
-They also cater to different needs: Whisper is a full end-to-end model that can be directly applied to different data sets, while wav2vec~2.0 needs careful fine-tuning for it to be accurate, since it doesn't have exhibit the same effective robustness as Whisper.
+On one hand, we have shown that high-quality speech encoders pre-trained on large amounts of unlabeled audio can substantially reduce labeled data requirements, while remaining competitive in high-resource settings.
+This makes ASR feasible even in ultra-low-resource scenarios, possibly enabling speech recognition for lesser-spoken languages and dialects.
 
+On the other hand, large-scale supervised training on diverse, multilingual, and multitask data enables zero-shot speech recognition with robustness approaching human-level performance, underscoring the effectiveness of scaling both data and model capacity.
 
+In conclusion, wav2vec~2.0 and Whisper are best viewed as complementary rather than competing approaches:
+the former prioritizes labeled data efficiency through representation learning, whereas the latter emphasizes strong multilingual and multitask performance through large-scale end-to-end training.
 
-\begin{comment}
-Models such as wav2vec~2.0, when fine-tuned on LibriSpeech, can achieve very low WER on in-distribution test sets but often degrade sharply on unseen datasets.
-In contrast, zero-shot Whisper models exhibit more stable performance across distributions and more closely resemble human robustness patterns, even when their in-distribution WER is comparable.
-Consequently, robustness evaluation complements standard benchmark testing by revealing differences in generalization behavior that are not captured by in-distribution WER alone.
-
-wav2vec 2.0:
-  can be adapted to streaming
-whisper:
-  only offline/non-streaming usage
-    global attention
-    not optimized for latency
-  optimized for robustness (very important in asr) and accuracy
-  multi-lingual
-  multi-task
-  actual end-to-end product
-
-  WER calculation: first apply text normalization
-
-general trends:
-  more capable models (e.g. translation, multi-language in whisper) trained on even more (labeled) data
-  self-supervised learning in (ultra-)low-resource scenarios?
-  transformer has emerged as superior architecture
-  more of the ASR pipeline built directly into models, such as inverse text normalization in whisper
-  more joint learning e.g. of representations, positional encodings, attention
-\end{comment}
+Open questions remain regarding how to improve robustness without relying solely on data scaling---particularly for low-resource scenarios---possibly by more effectively combining strong speech encoders with more expressive decoders or language models.
 
 \bibliography{zotero}
-
-% removed somehwere
-\begin{comment}
-
-We then examine and compare two representative systems---wav2vec~2.0 \citep{baevskiWav2vec20Framework2020} and OpenAI's Whisper \citep{radfordRobustSpeechRecognition2023}---discussing architectures, training, inference and evaluation of their performance. % TODO: add further points discussed in this section here.
-
-\subsection{Common Techniques in ASR}
-
-Before examining these specific speech recognition models, it is useful to review techniques commonly used across both the reference and other ASR systems.
-
-\end{comment}
 
 \end{document}
